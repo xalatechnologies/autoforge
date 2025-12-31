@@ -13,6 +13,7 @@ import { SetupWizard } from './components/SetupWizard'
 import { AddFeatureForm } from './components/AddFeatureForm'
 import { FeatureModal } from './components/FeatureModal'
 import { DebugLogViewer } from './components/DebugLogViewer'
+import { AgentThought } from './components/AgentThought'
 import { Plus, Loader2 } from 'lucide-react'
 import type { Feature } from './lib/types'
 
@@ -180,6 +181,12 @@ function App() {
               total={progress.total}
               percentage={progress.percentage}
               isConnected={wsState.isConnected}
+            />
+
+            {/* Agent Thought - shows latest agent narrative */}
+            <AgentThought
+              logs={wsState.logs}
+              agentStatus={wsState.agentStatus}
             />
 
             {/* Initializing Features State - show when agent is running but no features yet */}
