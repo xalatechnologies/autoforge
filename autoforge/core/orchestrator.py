@@ -39,6 +39,9 @@ from autoforge.data.paths import PROJECT_ROOT
 from autoforge.data.progress import has_features
 from server.utils.process_utils import kill_process_tree
 
+# Convex backend support
+from mcp_server.backend_adapter import get_backend, is_convex_enabled
+
 logger = logging.getLogger(__name__)
 
 # Root directory of autoforge (project root, where autonomous_agent_demo.py lives)
@@ -226,10 +229,55 @@ class ParallelOrchestrator:
 
         # Database session for this orchestrator
         self._engine, self._session_maker = create_database(project_dir)
+        
+        # Convex backend: resolve project ID if enabled
+        self._convex_project_id: str | None = None
+        if is_convex_enabled():
+            import asyncio
+            from api.convex_data_layer import ConvexDataLayer
+            try:
+                layer = ConvexDataLayer()
+                # Create a new event loop for sync context if needed
+                try:
+                    loop = asyncio.get_running_loop()
+                except RuntimeError:
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                self._convex_project_id = loop.run_until_complete(
+                    layer.resolve_project_id(project_dir.name)
+                )
+                if self._convex_project_id:
+                    logger.info(f"Convex enabled, project ID: {self._convex_project_id}")
+            except Exception as e:
+                logger.warning(f"Failed to resolve Convex project ID: {e}, falling back to SQLite")
 
     def get_session(self):
         """Get a new database session."""
         return self._session_maker()
+    
+    def _get_all_feature_dicts(self) -> list[dict]:
+        """Get all features as dicts, using Convex if enabled.
+        
+        This is the primary data access method for orchestrator operations.
+        Returns a list of feature dicts from either Convex or SQLite.
+        """
+        if is_convex_enabled() and self._convex_project_id:
+            result = get_backend().list_features(self._convex_project_id)
+            if result:
+                # list_features returns {"pending": [...], "in_progress": [...], "done": [...]}
+                all_features = []
+                for category in ["pending", "in_progress", "done"]:
+                    all_features.extend(result.get(category, []))
+                return all_features
+        
+        # Fall back to SQLite
+        session = self.get_session()
+        try:
+            session.expire_all()
+            all_features = session.query(Feature).all()
+            return [f.to_dict() for f in all_features]
+        finally:
+            session.close()
 
     def _get_random_passing_feature(self) -> int | None:
         """Get a random passing feature for regression testing (no claim needed).
@@ -477,13 +525,7 @@ class ParallelOrchestrator:
             scheduling_scores: Pre-computed scheduling scores. If None, computed from feature_dicts.
         """
         if feature_dicts is None:
-            session = self.get_session()
-            try:
-                session.expire_all()
-                all_features = session.query(Feature).all()
-                feature_dicts = [f.to_dict() for f in all_features]
-            finally:
-                session.close()
+            feature_dicts = self._get_all_feature_dicts()
 
         # Snapshot running IDs once (include all batch feature IDs)
         with self._lock:
@@ -521,13 +563,7 @@ class ParallelOrchestrator:
             scheduling_scores: Pre-computed scheduling scores. If None, computed from feature_dicts.
         """
         if feature_dicts is None:
-            session = self.get_session()
-            try:
-                session.expire_all()
-                all_features = session.query(Feature).all()
-                feature_dicts = [f.to_dict() for f in all_features]
-            finally:
-                session.close()
+            feature_dicts = self._get_all_feature_dicts()
 
         # Pre-compute passing_ids once to avoid O(n^2) in the loop
         passing_ids = {fd["id"] for fd in feature_dicts if fd.get("passes")}
@@ -590,13 +626,7 @@ class ParallelOrchestrator:
             feature_dicts: Pre-fetched list of feature dicts. If None, queries the database.
         """
         if feature_dicts is None:
-            session = self.get_session()
-            try:
-                session.expire_all()
-                all_features = session.query(Feature).all()
-                feature_dicts = [f.to_dict() for f in all_features]
-            finally:
-                session.close()
+            feature_dicts = self._get_all_feature_dicts()
 
         # No features = NOT complete, need initialization
         if len(feature_dicts) == 0:
@@ -627,6 +657,12 @@ class ParallelOrchestrator:
             feature_dicts: Pre-fetched list of feature dicts. If None, queries the database.
         """
         if feature_dicts is None:
+            # Use Convex if available, otherwise count from SQLite
+            if is_convex_enabled() and self._convex_project_id:
+                result = get_backend().get_stats(self._convex_project_id)
+                if result:
+                    return result.get("passing", 0)
+            # Fall back to SQLite
             session = self.get_session()
             try:
                 session.expire_all()
@@ -717,26 +753,39 @@ class ParallelOrchestrator:
                 return False, f"At max total agents ({total_agents}/{MAX_TOTAL_AGENTS})"
 
         # Mark as in_progress in database (or verify it's resumable)
-        session = self.get_session()
-        try:
-            feature = session.query(Feature).filter(Feature.id == feature_id).first()
-            if not feature:
-                return False, "Feature not found"
-            if feature.passes:
-                return False, "Feature already complete"
-
-            if resume:
-                # Resuming: feature should already be in_progress
-                if not feature.in_progress:
-                    return False, "Feature not in progress, cannot resume"
+        # Use Convex if available
+        if is_convex_enabled() and self._convex_project_id:
+            result = get_backend().claim_and_get(str(feature_id))
+            if result:
+                if result.get("error"):
+                    return False, result.get("error", "Unknown error")
+                if result.get("passes"):
+                    return False, "Feature already complete"
+                # Successfully claimed via Convex
             else:
-                # Starting fresh: feature should not be in_progress
-                if feature.in_progress:
-                    return False, "Feature already in progress"
-                feature.in_progress = True
-                session.commit()
-        finally:
-            session.close()
+                return False, "Feature not found"
+        else:
+            # Fall back to SQLite
+            session = self.get_session()
+            try:
+                feature = session.query(Feature).filter(Feature.id == feature_id).first()
+                if not feature:
+                    return False, "Feature not found"
+                if feature.passes:
+                    return False, "Feature already complete"
+
+                if resume:
+                    # Resuming: feature should already be in_progress
+                    if not feature.in_progress:
+                        return False, "Feature not in progress, cannot resume"
+                else:
+                    # Starting fresh: feature should not be in_progress
+                    if feature.in_progress:
+                        return False, "Feature already in progress"
+                    feature.in_progress = True
+                    session.commit()
+            finally:
+                session.close()
 
         # Start coding agent subprocess
         success, message = self._spawn_coding_agent(feature_id)

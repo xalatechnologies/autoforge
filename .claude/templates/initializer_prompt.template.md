@@ -21,7 +21,7 @@ This number was determined during spec creation and must be followed precisely. 
 
 ### CRITICAL FIRST TASK: Create Features
 
-Based on `app_spec.txt`, create features using the feature_create_bulk tool. The features are stored in a SQLite database,
+Based on `app_spec.txt`, create features using the feature_create_bulk tool. The features are stored in the database,
 which is the single source of truth for what needs to be built.
 
 **Creating Features:**
@@ -329,7 +329,7 @@ Create a git repository and make your first commit with:
 - README.md (project overview and setup instructions)
 - Any initial project structure files
 
-Note: Features are stored in the SQLite database (features.db), not in a JSON file.
+Note: Features are stored in the database (SQLite locally, or Convex if configured), not in a JSON file.
 
 Commit message: "Initial setup: init.sh, project structure, and features created via API"
 

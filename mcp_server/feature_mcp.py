@@ -48,6 +48,7 @@ from api.dependency_resolver import (
     would_create_circular_dependency,
 )
 from api.migration import migrate_json_to_sqlite
+from mcp_server.backend_adapter import get_backend, is_convex_enabled
 
 # Configuration from environment
 PROJECT_DIR = Path(os.environ.get("PROJECT_DIR", ".")).resolve()
@@ -143,6 +144,14 @@ def feature_get_stats() -> str:
     Returns:
         JSON with: passing (int), in_progress (int), total (int), percentage (float)
     """
+    # Check Convex backend first
+    if is_convex_enabled():
+        project_id = os.environ.get("CONVEX_PROJECT_ID", "")
+        if project_id:
+            result = get_backend().get_stats(project_id)
+            if result:
+                return json.dumps(result)
+    
     from sqlalchemy import case, func
 
     session = get_session()
@@ -184,6 +193,12 @@ def feature_get_by_id(
     Returns:
         JSON with feature details, or error if not found.
     """
+    # Check Convex backend first
+    if is_convex_enabled():
+        result = get_backend().get_by_id(str(feature_id))
+        if result:
+            return json.dumps(result)
+    
     session = get_session()
     try:
         feature = session.query(Feature).filter(Feature.id == feature_id).first()
@@ -211,6 +226,12 @@ def feature_get_summary(
     Returns:
         JSON with: id, name, passes, in_progress, dependencies
     """
+    # Check Convex backend first
+    if is_convex_enabled():
+        result = get_backend().get_summary(str(feature_id))
+        if result:
+            return json.dumps(result)
+    
     session = get_session()
     try:
         feature = session.query(Feature).filter(Feature.id == feature_id).first()
@@ -242,6 +263,12 @@ def feature_mark_passing(
     Returns:
         JSON with success confirmation: {success, feature_id, name}
     """
+    # Check Convex backend first
+    if is_convex_enabled():
+        result = get_backend().mark_passing(str(feature_id))
+        if result:
+            return json.dumps(result)
+    
     session = get_session()
     try:
         # Atomic update with state guard - prevents double-pass in parallel mode
@@ -293,6 +320,12 @@ def feature_mark_failing(
     Returns:
         JSON with the updated feature details, or error if not found.
     """
+    # Check Convex backend first
+    if is_convex_enabled():
+        result = get_backend().mark_failing(str(feature_id))
+        if result:
+            return json.dumps(result)
+    
     session = get_session()
     try:
         # Check if feature exists first
@@ -343,6 +376,12 @@ def feature_skip(
     Returns:
         JSON with skip details: id, name, old_priority, new_priority, message
     """
+    # Check Convex backend first
+    if is_convex_enabled():
+        result = get_backend().skip(str(feature_id))
+        if result:
+            return json.dumps(result)
+    
     session = get_session()
     try:
         feature = session.query(Feature).filter(Feature.id == feature_id).first()
@@ -399,6 +438,12 @@ def feature_mark_in_progress(
     Returns:
         JSON with the updated feature details, or error if not found or already in-progress.
     """
+    # Check Convex backend first
+    if is_convex_enabled():
+        result = get_backend().mark_in_progress(str(feature_id))
+        if result:
+            return json.dumps(result)
+    
     session = get_session()
     try:
         # Atomic claim: only succeeds if feature is not already claimed or passing
@@ -445,6 +490,12 @@ def feature_claim_and_get(
     Returns:
         JSON with feature details including claimed status, or error if not found.
     """
+    # Check Convex backend first
+    if is_convex_enabled():
+        result = get_backend().claim_and_get(str(feature_id))
+        if result:
+            return json.dumps(result)
+    
     session = get_session()
     try:
         # First check if feature exists
@@ -498,6 +549,12 @@ def feature_clear_in_progress(
     Returns:
         JSON with the updated feature details, or error if not found.
     """
+    # Check Convex backend first
+    if is_convex_enabled():
+        result = get_backend().clear_in_progress(str(feature_id))
+        if result:
+            return json.dumps(result)
+    
     session = get_session()
     try:
         # Check if feature exists
@@ -548,6 +605,14 @@ def feature_create_bulk(
     Returns:
         JSON with: created (int) - number of features created, with_dependencies (int)
     """
+    # Check Convex backend first
+    if is_convex_enabled():
+        project_id = os.environ.get("CONVEX_PROJECT_ID", "")
+        if project_id:
+            result = get_backend().create_bulk(project_id, features)
+            if result:
+                return json.dumps(result)
+    
     try:
         # Use atomic transaction for bulk inserts to prevent priority conflicts
         with atomic_transaction(_session_maker) as session:
@@ -647,6 +712,14 @@ def feature_create(
     Returns:
         JSON with the created feature details including its ID
     """
+    # Check Convex backend first
+    if is_convex_enabled():
+        project_id = os.environ.get("CONVEX_PROJECT_ID", "")
+        if project_id:
+            result = get_backend().create(project_id, category, name, description, steps)
+            if result:
+                return json.dumps(result)
+    
     try:
         # Use atomic transaction to prevent priority collisions
         with atomic_transaction(_session_maker) as session:
@@ -697,6 +770,12 @@ def feature_add_dependency(
     Returns:
         JSON with success status and updated dependencies list, or error message
     """
+    # Check Convex backend first
+    if is_convex_enabled():
+        result = get_backend().add_dependency(str(feature_id), str(dependency_id))
+        if result:
+            return json.dumps(result)
+    
     try:
         # Security: Self-reference check (can do before transaction)
         if feature_id == dependency_id:
@@ -756,6 +835,12 @@ def feature_remove_dependency(
     Returns:
         JSON with success status and updated dependencies list, or error message
     """
+    # Check Convex backend first
+    if is_convex_enabled():
+        result = get_backend().remove_dependency(str(feature_id), str(dependency_id))
+        if result:
+            return json.dumps(result)
+    
     try:
         # Use atomic transaction for consistent read-modify-write
         with atomic_transaction(_session_maker) as session:

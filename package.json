@@ -4,7 +4,7 @@
   "description": "Autonomous coding agent with web UI - build complete apps with AI",
   "license": "AGPL-3.0",
   "bin": {
-    "autoforge": "./bin/autoforge.js"
+    "autoforge": "bin/autoforge.js"
   },
   "type": "module",
   "engines": {
@@ -46,5 +46,23 @@
     "demo": "python3 autonomous_agent_demo.py",
     "test": "python3 -m pytest tests/ -v",
     "prepublishOnly": "npm --prefix ui install && npm --prefix ui run build"
+  },
+  "main": "index.js",
+  "directories": {
+    "example": "examples",
+    "lib": "lib",
+    "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xalatechnologies/autoforge.git"
+  },
+  "author": "",
+  "bugs": {
+    "url": "https://github.com/xalatechnologies/autoforge/issues"
+  },
+  "homepage": "https://github.com/xalatechnologies/autoforge#readme",
+  "dependencies": {
+    "convex": "^1.31.7"
   }
 }

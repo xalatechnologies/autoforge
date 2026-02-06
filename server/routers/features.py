@@ -26,6 +26,22 @@ from ..schemas import (
 )
 from ..utils.project_helpers import get_project_path as _get_project_path
 from ..utils.validation import validate_project_name
+from ..utils.backend_adapter import (
+    is_convex_enabled,
+    get_project_id,
+    get_convex_layer,
+    list_features_convex,
+    get_feature_convex,
+    get_dependency_graph_convex,
+    create_feature_convex,
+    create_features_bulk_convex,
+    skip_feature_convex,
+    add_dependency_convex,
+    remove_dependency_convex,
+    update_feature_convex,
+    delete_feature_convex,
+    set_dependencies_convex,
+)
 
 # Lazy imports to avoid circular dependencies
 _create_database = None
@@ -118,6 +134,33 @@ async def list_features(project_name: str):
     - done: passes=True
     """
     project_name = validate_project_name(project_name)
+    
+    # Check Convex backend first
+    if is_convex_enabled():
+        # Pass project_name - it will be resolved to Convex document ID automatically
+        result = await list_features_convex(project_name)
+        if result:
+                # Convert to FeatureResponse format
+                def to_response(data: dict) -> FeatureResponse:
+                    return FeatureResponse(
+                        id=data["id"],
+                        priority=data.get("priority", 0),
+                        category=data.get("category", ""),
+                        name=data["name"],
+                        description=data.get("description", ""),
+                        steps=data.get("steps", []),
+                        dependencies=data.get("dependencies", []),
+                        passes=data.get("passes", False),
+                        in_progress=data.get("in_progress", False),
+                        blocked=data.get("blocked", False),
+                        blocking_dependencies=data.get("blocking_dependencies", []),
+                    )
+                return FeatureListResponse(
+                    pending=[to_response(f) for f in result.get("pending", [])],
+                    in_progress=[to_response(f) for f in result.get("in_progress", [])],
+                    done=[to_response(f) for f in result.get("done", [])],
+                )
+    
     project_dir = _get_project_path(project_name)
 
     if not project_dir:
@@ -169,6 +212,40 @@ async def list_features(project_name: str):
 async def create_feature(project_name: str, feature: FeatureCreate):
     """Create a new feature/test case manually."""
     project_name = validate_project_name(project_name)
+    
+    # Use Convex backend if enabled
+    if is_convex_enabled():
+        from server.utils.backend_adapter import create_feature_convex, get_convex_layer
+        
+        # Resolve project name to Convex project ID
+        layer = await get_convex_layer()
+        project_id = await layer.resolve_project_id(project_name)
+        
+        if project_id:
+            result = await create_feature_convex(
+                project_id,
+                feature.category,
+                feature.name,
+                feature.description,
+                feature.steps or []
+            )
+            if result and result.get("success"):
+                feat = result.get("feature", {})
+                return FeatureResponse(
+                    id=feat.get("id", ""),
+                    priority=feat.get("priority", 0),
+                    category=feat.get("category", feature.category),
+                    name=feat.get("name", feature.name),
+                    description=feature.description,
+                    steps=feature.steps or [],
+                    dependencies=[],
+                    passes=False,
+                    in_progress=False,
+                    blocked=False,
+                    blocking_dependencies=[],
+                )
+    
+    # Fallback to SQLite
     project_dir = _get_project_path(project_name)
 
     if not project_dir:
@@ -235,6 +312,53 @@ async def create_features_bulk(project_name: str, bulk: FeatureBulkCreate):
         {"created": N, "features": [...]}
     """
     project_name = validate_project_name(project_name)
+    
+    # Use Convex backend if enabled
+    if is_convex_enabled():
+        from server.utils.backend_adapter import create_features_bulk_convex, get_convex_layer
+        
+        # Resolve project name to Convex project ID
+        layer = await get_convex_layer()
+        project_id = await layer.resolve_project_id(project_name)
+        
+        if project_id:
+            # Convert to Convex format
+            features_data = []
+            for f in bulk.features:
+                features_data.append({
+                    "category": f.category,
+                    "name": f.name,
+                    "description": f.description,
+                    "steps": f.steps,
+                    "depends_on_indices": f.dependencies if f.dependencies else None,
+                })
+            
+            result = await create_features_bulk_convex(project_id, features_data)
+            
+            if result:
+                # Convert Convex response to FeatureResponse format
+                created_features = []
+                for f in result.get("features", []):
+                    created_features.append(FeatureResponse(
+                        id=f["id"],
+                        category=f["category"],
+                        name=f["name"],
+                        description=f["description"],
+                        steps=f.get("steps", []),
+                        dependencies=f.get("dependencies", []),
+                        priority=f.get("priority", 0),
+                        passes=f.get("passes", False),
+                        in_progress=f.get("inProgress", False),
+                        blocked=f.get("blocked", False),
+                        blocking_dependencies=f.get("blocking_dependencies", []),
+                    ))
+                
+                return FeatureBulkCreateResponse(
+                    created=result.get("created", len(created_features)),
+                    features=created_features
+                )
+    
+    # SQLite fallback
     project_dir = _get_project_path(project_name)
 
     if not project_dir:
@@ -306,6 +430,50 @@ async def create_features_bulk(project_name: str, bulk: FeatureBulkCreate):
         raise HTTPException(status_code=500, detail="Failed to bulk create features")
 
 
+@router.get("/stats")
+async def get_feature_stats(project_name: str):
+    """Get feature completion statistics.
+    
+    Returns counts for total, pending, in_progress, and passing features.
+    """
+    project_name = validate_project_name(project_name)
+    
+    # Use Convex backend if enabled
+    if is_convex_enabled():
+        layer = await get_convex_layer()
+        project_id = await layer.resolve_project_id(project_name)
+        if project_id:
+            result = await layer.get_feature_stats(project_id)
+            if result:
+                return result
+    
+    # Fall back to SQLite
+    project_dir = _get_project_path(project_name)
+    if not project_dir:
+        raise HTTPException(status_code=404, detail=f"Project '{project_name}' not found in registry")
+    
+    if not project_dir.exists():
+        raise HTTPException(status_code=404, detail="Project directory not found")
+    
+    from autoforge.data.paths import get_features_db_path
+    db_file = get_features_db_path(project_dir)
+    if not db_file.exists():
+        return {"total": 0, "pending": 0, "in_progress": 0, "passing": 0}
+    
+    _, Feature = _get_db_classes()
+    with get_db_session(project_dir) as session:
+        all_features = session.query(Feature).all()
+        passing = sum(1 for f in all_features if getattr(f, 'passes', False))
+        in_progress = sum(1 for f in all_features if getattr(f, 'in_progress', False))
+        total = len(all_features)
+        pending = total - passing - in_progress
+        return {
+            "total": total,
+            "pending": pending,
+            "in_progress": in_progress,
+            "passing": passing
+        }
+
 @router.get("/graph", response_model=DependencyGraphResponse)
 async def get_dependency_graph(project_name: str):
     """Return dependency graph data for visualization.
@@ -314,6 +482,32 @@ async def get_dependency_graph(project_name: str):
     rendering with React Flow or similar graph libraries.
     """
     project_name = validate_project_name(project_name)
+    
+    # Use Convex backend if enabled
+    if is_convex_enabled():
+        layer = await get_convex_layer()
+        project_id = await layer.resolve_project_id(project_name)
+        if project_id:
+            result = await get_dependency_graph_convex(project_id)
+            if result:
+                # Convert Convex result to response format
+                nodes = [
+                    DependencyGraphNode(
+                        id=n["id"],
+                        name=n["name"],
+                        category=n.get("category", ""),
+                        status=n.get("status", "pending"),
+                        priority=n.get("priority", 0),
+                        dependencies=n.get("dependencies", [])
+                    )
+                    for n in result.get("nodes", [])
+                ]
+                edges = [
+                    DependencyGraphEdge(source=e["source"], target=e["target"])
+                    for e in result.get("edges", [])
+                ]
+                return DependencyGraphResponse(nodes=nodes, edges=edges)
+    
     project_dir = _get_project_path(project_name)
 
     if not project_dir:
@@ -377,9 +571,28 @@ async def get_dependency_graph(project_name: str):
 
 
 @router.get("/{feature_id}", response_model=FeatureResponse)
-async def get_feature(project_name: str, feature_id: int):
+async def get_feature(project_name: str, feature_id: str):
     """Get details of a specific feature."""
     project_name = validate_project_name(project_name)
+    
+    # Check Convex backend first
+    if is_convex_enabled():
+        result = await get_feature_convex(str(feature_id))
+        if result:
+            return FeatureResponse(
+                id=result["id"],
+                priority=result.get("priority", 0),
+                category=result.get("category", ""),
+                name=result["name"],
+                description=result.get("description", ""),
+                steps=result.get("steps", []),
+                dependencies=result.get("dependencies", []),
+                passes=result.get("passes", False),
+                in_progress=result.get("in_progress", False),
+                blocked=result.get("blocked", False),
+                blocking_dependencies=result.get("blocking_dependencies", []),
+            )
+    
     project_dir = _get_project_path(project_name)
 
     if not project_dir:
@@ -411,7 +624,7 @@ async def get_feature(project_name: str, feature_id: int):
 
 
 @router.patch("/{feature_id}", response_model=FeatureResponse)
-async def update_feature(project_name: str, feature_id: int, update: FeatureUpdate):
+async def update_feature(project_name: str, feature_id: str, update: FeatureUpdate):
     """
     Update a feature's details.
 
@@ -420,6 +633,34 @@ async def update_feature(project_name: str, feature_id: int, update: FeatureUpda
     when the agent is stuck or implementing a feature incorrectly.
     """
     project_name = validate_project_name(project_name)
+    
+    # Use Convex backend if enabled
+    if is_convex_enabled():
+        result = await update_feature_convex(
+            str(feature_id),
+            name=update.name,
+            description=update.description,
+            steps=update.steps,
+            category=update.category,
+        )
+        if result and result.get("success"):
+            f = result.get("feature", {})
+            return FeatureResponse(
+                id=f.get("id", feature_id),
+                priority=f.get("priority", 0),
+                category=f.get("category", ""),
+                name=f.get("name", ""),
+                description=f.get("description", ""),
+                steps=f.get("steps", []),
+                dependencies=f.get("dependencies", []),
+                passes=f.get("passes", False),
+                in_progress=f.get("inProgress", False),
+                blocked=False,
+                blocking_dependencies=[],
+            )
+        elif result and result.get("error"):
+            raise HTTPException(status_code=400, detail=result["error"])
+    
     project_dir = _get_project_path(project_name)
 
     if not project_dir:
@@ -474,7 +715,7 @@ async def update_feature(project_name: str, feature_id: int, update: FeatureUpda
 
 
 @router.delete("/{feature_id}")
-async def delete_feature(project_name: str, feature_id: int):
+async def delete_feature(project_name: str, feature_id: str):
     """Delete a feature and clean up references in other features' dependencies.
 
     When a feature is deleted, any other features that depend on it will have
@@ -482,6 +723,15 @@ async def delete_feature(project_name: str, feature_id: int):
     dependencies that would permanently block features.
     """
     project_name = validate_project_name(project_name)
+    
+    # Use Convex backend if enabled
+    if is_convex_enabled():
+        result = await delete_feature_convex(str(feature_id))
+        if result and result.get("success"):
+            return {"success": True, "message": f"Feature {feature_id} deleted", "affected_features": []}
+        elif result and result.get("error"):
+            raise HTTPException(status_code=400, detail=result["error"])
+    
     project_dir = _get_project_path(project_name)
 
     if not project_dir:
@@ -525,7 +775,7 @@ async def delete_feature(project_name: str, feature_id: int):
 
 
 @router.patch("/{feature_id}/skip")
-async def skip_feature(project_name: str, feature_id: int):
+async def skip_feature(project_name: str, feature_id: str):
     """
     Mark a feature as skipped by moving it to the end of the priority queue.
 
@@ -533,6 +783,13 @@ async def skip_feature(project_name: str, feature_id: int):
     so it will be processed last.
     """
     project_name = validate_project_name(project_name)
+    
+    # Check Convex backend first
+    if is_convex_enabled():
+        result = await skip_feature_convex(str(feature_id))
+        if result:
+            return result
+    
     project_dir = _get_project_path(project_name)
 
     if not project_dir:
@@ -580,7 +837,7 @@ def _get_dependency_resolver():
 
 
 @router.post("/{feature_id}/dependencies/{dep_id}")
-async def add_dependency(project_name: str, feature_id: int, dep_id: int):
+async def add_dependency(project_name: str, feature_id: str, dep_id: str):
     """Add a dependency relationship between features.
 
     The dep_id feature must be completed before feature_id can be started.
@@ -591,6 +848,14 @@ async def add_dependency(project_name: str, feature_id: int, dep_id: int):
     # Security: Self-reference check
     if feature_id == dep_id:
         raise HTTPException(status_code=400, detail="A feature cannot depend on itself")
+
+    # Use Convex backend if enabled
+    if is_convex_enabled():
+        result = await add_dependency_convex(str(feature_id), str(dep_id))
+        if result and result.get("success"):
+            return {"success": True, "feature_id": feature_id, "dependencies": result.get("dependencies", [])}
+        elif result and result.get("error"):
+            raise HTTPException(status_code=400, detail=result["error"])
 
     project_dir = _get_project_path(project_name)
 
@@ -641,9 +906,18 @@ async def add_dependency(project_name: str, feature_id: int, dep_id: int):
 
 
 @router.delete("/{feature_id}/dependencies/{dep_id}")
-async def remove_dependency(project_name: str, feature_id: int, dep_id: int):
+async def remove_dependency(project_name: str, feature_id: str, dep_id: str):
     """Remove a dependency from a feature."""
     project_name = validate_project_name(project_name)
+    
+    # Use Convex backend if enabled
+    if is_convex_enabled():
+        result = await remove_dependency_convex(str(feature_id), str(dep_id))
+        if result and result.get("success"):
+            return {"success": True, "feature_id": feature_id, "dependencies": result.get("dependencies", [])}
+        elif result and result.get("error"):
+            raise HTTPException(status_code=400, detail=result["error"])
+    
     project_dir = _get_project_path(project_name)
 
     if not project_dir:
@@ -677,20 +951,13 @@ async def remove_dependency(project_name: str, feature_id: int, dep_id: int):
 
 
 @router.put("/{feature_id}/dependencies")
-async def set_dependencies(project_name: str, feature_id: int, update: DependencyUpdate):
+async def set_dependencies(project_name: str, feature_id: str, update: DependencyUpdate):
     """Set all dependencies for a feature at once, replacing any existing.
 
     Validates: self-reference, existence of all dependencies, circular dependencies, max limit.
     """
     project_name = validate_project_name(project_name)
-    project_dir = _get_project_path(project_name)
-
-    if not project_dir:
-        raise HTTPException(status_code=404, detail=f"Project '{project_name}' not found in registry")
-
-    if not project_dir.exists():
-        raise HTTPException(status_code=404, detail="Project directory not found")
-
+    
     dependency_ids = update.dependency_ids
 
     # Security: Self-reference check
@@ -700,6 +967,23 @@ async def set_dependencies(project_name: str, feature_id: int, update: Dependenc
     # Check for duplicates
     if len(dependency_ids) != len(set(dependency_ids)):
         raise HTTPException(status_code=400, detail="Duplicate dependencies not allowed")
+    
+    # Use Convex backend if enabled
+    if is_convex_enabled():
+        str_dep_ids = [str(d) for d in dependency_ids]
+        result = await set_dependencies_convex(str(feature_id), str_dep_ids)
+        if result and result.get("success"):
+            return {"success": True, "feature_id": feature_id, "dependencies": result.get("dependencies", [])}
+        elif result and result.get("error"):
+            raise HTTPException(status_code=400, detail=result["error"])
+    
+    project_dir = _get_project_path(project_name)
+
+    if not project_dir:
+        raise HTTPException(status_code=404, detail=f"Project '{project_name}' not found in registry")
+
+    if not project_dir.exists():
+        raise HTTPException(status_code=404, detail="Project directory not found")
 
     would_create_circular_dependency, _ = _get_dependency_resolver()
     _, Feature = _get_db_classes()

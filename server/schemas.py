@@ -94,7 +94,7 @@ class FeatureBase(BaseModel):
     name: str
     description: str
     steps: list[str]
-    dependencies: list[int] = Field(default_factory=list)  # Optional dependencies
+    dependencies: list[int | str] = Field(default_factory=list)  # SQLite uses int, Convex uses str
 
 
 class FeatureCreate(FeatureBase):
@@ -109,17 +109,17 @@ class FeatureUpdate(BaseModel):
     description: str | None = None
     steps: list[str] | None = None
     priority: int | None = None
-    dependencies: list[int] | None = None  # Optional - can update dependencies
+    dependencies: list[int | str] | None = None  # SQLite uses int, Convex uses str
 
 
 class FeatureResponse(FeatureBase):
     """Response schema for a feature."""
-    id: int
+    id: int | str  # SQLite uses int, Convex uses str
     priority: int
     passes: bool
     in_progress: bool
     blocked: bool = False  # Computed: has unmet dependencies
-    blocking_dependencies: list[int] = Field(default_factory=list)  # Computed
+    blocking_dependencies: list[int | str] = Field(default_factory=list)  # Computed
 
     class Config:
         from_attributes = True
@@ -150,18 +150,18 @@ class FeatureBulkCreateResponse(BaseModel):
 
 class DependencyGraphNode(BaseModel):
     """Minimal node for graph visualization (no description exposed for security)."""
-    id: int
+    id: int | str  # SQLite uses int, Convex uses str
     name: str
     category: str
     status: Literal["pending", "in_progress", "done", "blocked"]
     priority: int
-    dependencies: list[int]
+    dependencies: list[int | str]  # SQLite uses int, Convex uses str
 
 
 class DependencyGraphEdge(BaseModel):
     """Edge in the dependency graph."""
-    source: int
-    target: int
+    source: int | str  # SQLite uses int, Convex uses str
+    target: int | str  # SQLite uses int, Convex uses str
 
 
 class DependencyGraphResponse(BaseModel):
@@ -172,7 +172,7 @@ class DependencyGraphResponse(BaseModel):
 
 class DependencyUpdate(BaseModel):
     """Request schema for updating a feature's dependencies."""
-    dependency_ids: list[int] = Field(..., max_length=20)  # Security: limit
+    dependency_ids: list[int | str] = Field(..., max_length=20)  # SQLite uses int, Convex uses str
 
 
 # ============================================================================

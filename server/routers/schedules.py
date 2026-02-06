@@ -26,6 +26,15 @@ from ..schemas import (
 )
 from ..utils.project_helpers import get_project_path as _get_project_path
 from ..utils.validation import validate_project_name
+from ..utils.backend_adapter import (
+    is_convex_enabled,
+    get_project_id,
+    list_schedules_convex,
+    get_schedule_convex,
+    create_schedule_convex,
+    update_schedule_convex,
+    delete_schedule_convex,
+)
 
 if TYPE_CHECKING:
     from api.database import Schedule as ScheduleModel
@@ -86,6 +95,16 @@ def _get_db_session(project_name: str) -> Generator[Tuple[Session, Path], None, 
 @router.get("", response_model=ScheduleListResponse)
 async def list_schedules(project_name: str):
     """Get all schedules for a project."""
+    # Check Convex backend first
+    if is_convex_enabled():
+        project_id = get_project_id()
+        if project_id:
+            result = await list_schedules_convex(project_id)
+            if result is not None:
+                return ScheduleListResponse(
+                    schedules=[ScheduleResponse.model_validate(s) for s in result]
+                )
+    
     from api.database import Schedule
 
     with _get_db_session(project_name) as (db, _):
@@ -236,6 +255,12 @@ async def get_next_scheduled_run(project_name: str):
 @router.get("/{schedule_id}", response_model=ScheduleResponse)
 async def get_schedule(project_name: str, schedule_id: int):
     """Get a single schedule by ID."""
+    # Check Convex backend first
+    if is_convex_enabled():
+        result = await get_schedule_convex(str(schedule_id))
+        if result:
+            return ScheduleResponse.model_validate(result)
+    
     from api.database import Schedule
 
     with _get_db_session(project_name) as (db, _):

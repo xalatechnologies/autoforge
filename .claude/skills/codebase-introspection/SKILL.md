@@ -119,3 +119,39 @@ The analysis is powered by:
 - `mcp_server/feature_mcp.py` — MCP tool exposure
 
 No external dependencies required — analysis is entirely local.
+
+## Data Backend
+
+AutoForge supports two data backends for feature and schedule storage:
+
+| Backend | Location | Use Case |
+|---------|----------|----------|
+| **SQLite** (default) | Per-project `.autoforge/features.db` | Local development, single-machine |
+| **Convex** | Centralized cloud database | Team collaboration, real-time sync |
+
+### Backend Selection
+
+The backend is controlled by the `AUTOFORGE_BACKEND` environment variable:
+
+```bash
+# Local SQLite (default)
+AUTOFORGE_BACKEND=sqlite
+
+# Convex cloud backend  
+AUTOFORGE_BACKEND=convex
+CONVEX_URL=https://xxx.convex.cloud
+CONVEX_DEPLOY_KEY=prod:xxx
+```
+
+### MCP Tool Compatibility
+
+**All MCP tools work identically regardless of backend.** The same tools you use for local development work seamlessly with Convex:
+
+- `feature_get_stats`, `feature_get_by_id`, `feature_mark_passing`, etc.
+- `feature_create_bulk`, `feature_add_dependency`, etc.
+
+When Convex backend is active:
+- Projects are identified by Convex document IDs (strings)
+- Real-time sync enables multiple agents to collaborate
+- Feature progress is visible in the docs dashboard
+
