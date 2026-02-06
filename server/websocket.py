@@ -626,7 +626,7 @@ def _get_count_passing_tests():
         root = Path(__file__).parent.parent
         if str(root) not in sys.path:
             sys.path.insert(0, str(root))
-        from progress import count_passing_tests
+        from autoforge.data.progress import count_passing_tests
         _count_passing_tests = count_passing_tests
     return _count_passing_tests
 

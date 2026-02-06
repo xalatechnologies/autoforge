@@ -18,7 +18,7 @@ _root = Path(__file__).parent.parent
 if str(_root) not in sys.path:
     sys.path.insert(0, str(_root))
 
-from registry import DEFAULT_MODEL, VALID_MODELS
+from autoforge.data.registry import DEFAULT_MODEL, VALID_MODELS
 
 # ============================================================================
 # Project Schemas

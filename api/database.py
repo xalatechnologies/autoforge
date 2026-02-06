@@ -183,7 +183,7 @@ class ScheduleOverride(Base):
 
 def get_database_path(project_dir: Path) -> Path:
     """Return the path to the SQLite database for a project."""
-    from autoforge_paths import get_features_db_path
+    from autoforge.data.paths import get_features_db_path
     return get_features_db_path(project_dir)
 
 

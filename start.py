@@ -15,17 +15,17 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from auth import is_auth_error, print_auth_error_help
+from autoforge.security.auth import is_auth_error, print_auth_error_help
 
 # Load environment variables from .env file if present
 load_dotenv()
 
-from prompts import (
+from autoforge.core.prompts import (
     get_project_prompts_dir,
     has_project_prompts,
     scaffold_project_prompts,
 )
-from registry import (
+from autoforge.data.registry import (
     get_project_path,
     list_registered_projects,
     register_project,

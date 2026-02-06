@@ -44,8 +44,8 @@ from dotenv import load_dotenv
 # IMPORTANT: Must be called BEFORE importing other modules that read env vars at load time
 load_dotenv()
 
-from agent import run_autonomous_agent
-from registry import DEFAULT_MODEL, get_project_path
+from autoforge.core.agent import run_autonomous_agent
+from autoforge.data.registry import DEFAULT_MODEL, get_project_path
 
 
 def parse_args() -> argparse.Namespace:
@@ -222,7 +222,7 @@ def main() -> None:
             return
 
     # Migrate project layout to .autoforge/ if needed (idempotent, safe)
-    from autoforge_paths import migrate_project_layout
+    from autoforge.data.paths import migrate_project_layout
     migrated = migrate_project_layout(project_dir)
     if migrated:
         print(f"Migrated project files to .autoforge/: {', '.join(migrated)}", flush=True)
@@ -264,7 +264,7 @@ def main() -> None:
         else:
             # Entry point mode - always use unified orchestrator
             # Clean up stale temp files before starting (prevents temp folder bloat)
-            from temp_cleanup import cleanup_stale_temp
+            from autoforge.utils.cleanup import cleanup_stale_temp
             cleanup_stats = cleanup_stale_temp()
             if cleanup_stats["dirs_deleted"] > 0 or cleanup_stats["files_deleted"] > 0:
                 mb_freed = cleanup_stats["bytes_freed"] / (1024 * 1024)
@@ -274,7 +274,7 @@ def main() -> None:
                     flush=True,
                 )
 
-            from parallel_orchestrator import run_parallel_orchestrator
+            from autoforge.core.orchestrator import run_parallel_orchestrator
 
             # Clamp concurrency to valid range (1-5)
             concurrency = max(1, min(args.concurrency, 5))

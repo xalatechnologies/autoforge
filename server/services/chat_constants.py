@@ -31,7 +31,7 @@ if _root_str not in sys.path:
 # Re-exported here so existing ``from .chat_constants import API_ENV_VARS``
 # imports continue to work unchanged.
 # -------------------------------------------------------------------
-from env_constants import API_ENV_VARS  # noqa: E402, F401
+from autoforge.utils.env import API_ENV_VARS  # noqa: E402, F401
 
 
 async def make_multimodal_message(content_blocks: list[dict]) -> AsyncGenerator[dict, None]:

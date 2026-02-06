@@ -16,7 +16,7 @@ _root = Path(__file__).parent.parent.parent
 if str(_root) not in sys.path:
     sys.path.insert(0, str(_root))
 
-from registry import get_project_path as _registry_get_project_path
+from autoforge.data.registry import get_project_path as _registry_get_project_path
 
 
 def get_project_path(project_name: str) -> Path | None:

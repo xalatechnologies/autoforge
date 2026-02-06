@@ -984,5 +984,56 @@ def feature_set_dependencies(
         return json.dumps({"error": f"Failed to set dependencies: {str(e)}"})
 
 
+@mcp.tool()
+def codebase_analyze(
+    project_dir: Annotated[str, Field(description="Absolute path to the project directory to analyze")] = ""
+) -> str:
+    """Analyze a codebase to understand its structure, tech stack, and conventions.
+
+    Use this tool when you need to understand an existing codebase before making changes.
+    It detects:
+    - Tech stack (frameworks, languages, build tools, test frameworks)
+    - Styling/design system (CSS frameworks, design tokens, theme files)
+    - Documentation (README, CHANGELOG, architecture docs)
+    - Specs and planning files (AutoForge specs, Traycer epics/tickets, PRDs)
+    - Tasks and TODOs (from code comments and epic files)
+    - Project structure (directories, entry points, patterns)
+
+    Args:
+        project_dir: Absolute path to the project to analyze.
+                    If empty, uses the PROJECT_DIR environment variable.
+
+    Returns:
+        JSON with complete analysis including tech_stack, styling, dependencies,
+        docs, specs, tasks, and structure. Also includes a human-readable summary.
+    """
+    try:
+        # If no project_dir provided, use the PROJECT_DIR environment variable
+        target_dir = Path(project_dir) if project_dir else PROJECT_DIR
+        target_dir = target_dir.resolve()
+
+        if not target_dir.exists():
+            return json.dumps({"error": f"Directory does not exist: {target_dir}"})
+
+        if not target_dir.is_dir():
+            return json.dumps({"error": f"Path is not a directory: {target_dir}"})
+
+        # Import here to avoid circular imports at module load time
+        sys.path.insert(0, str(Path(__file__).parent.parent))
+        from server.services.codebase_analyzer import analyze_codebase
+
+        analysis = analyze_codebase(target_dir)
+
+        # Return both structured data and human-readable summary
+        result = analysis.to_dict()
+        result["summary"] = analysis.to_summary()
+
+        return json.dumps(result, indent=2)
+
+    except Exception as e:
+        return json.dumps({"error": f"Analysis failed: {str(e)}"})
+
+
 if __name__ == "__main__":
     mcp.run()
+

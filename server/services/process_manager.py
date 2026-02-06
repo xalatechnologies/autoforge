@@ -21,8 +21,8 @@ import psutil
 
 # Add parent directory to path for shared module imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-from auth import AUTH_ERROR_HELP_SERVER as AUTH_ERROR_HELP  # noqa: E402
-from auth import is_auth_error
+from autoforge.security.auth import AUTH_ERROR_HELP_SERVER as AUTH_ERROR_HELP  # noqa: E402
+from autoforge.security.auth import is_auth_error
 from server.utils.process_utils import kill_process_tree
 
 logger = logging.getLogger(__name__)
@@ -92,7 +92,7 @@ class AgentProcessManager:
         self._callbacks_lock = threading.Lock()
 
         # Lock file to prevent multiple instances (stored in project directory)
-        from autoforge_paths import get_agent_lock_path
+        from autoforge.data.paths import get_agent_lock_path
         self.lock_file = get_agent_lock_path(self.project_dir)
 
     @property
@@ -576,7 +576,7 @@ def cleanup_orphaned_locks() -> int:
     if str(root) not in sys.path:
         sys.path.insert(0, str(root))
 
-    from registry import list_registered_projects
+    from autoforge.data.registry import list_registered_projects
 
     cleaned = 0
     try:
@@ -587,7 +587,7 @@ def cleanup_orphaned_locks() -> int:
                 continue
 
             # Check both legacy and new locations for lock files
-            from autoforge_paths import get_autoforge_dir
+            from autoforge.data.paths import get_autoforge_dir
             lock_locations = [
                 project_path / ".agent.lock",
                 get_autoforge_dir(project_path) / ".agent.lock",

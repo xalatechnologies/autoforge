@@ -22,7 +22,7 @@ mimetypes.add_type("text/javascript", ".js", True)
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from registry import (
+from autoforge.data.registry import (
     AVAILABLE_MODELS,
     DEFAULT_MODEL,
     get_all_settings,
