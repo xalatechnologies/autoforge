@@ -1,0 +1,2 @@
+/** addons adapters */
+export {};

@@ -1,0 +1,2 @@
+/** tenant-config types */
+export {};

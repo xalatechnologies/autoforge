@@ -1,0 +1,2 @@
+/** user-prefs types */
+export {};

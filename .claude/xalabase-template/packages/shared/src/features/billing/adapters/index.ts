@@ -1,0 +1,2 @@
+/** billing adapters */
+export {};

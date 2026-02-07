@@ -1,0 +1,2 @@
+/** reviews adapters */
+export {};

@@ -1,0 +1,2 @@
+/** rbac adapters */
+export {};

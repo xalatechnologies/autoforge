@@ -1,0 +1,2 @@
+/** tenant-config utils */
+export {};

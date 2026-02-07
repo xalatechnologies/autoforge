@@ -1,0 +1,2 @@
+/** bookings adapters */
+export {};

@@ -1,0 +1,2 @@
+/** notifications types */
+export {};

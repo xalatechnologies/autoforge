@@ -43,7 +43,19 @@ chmod +x init.sh
 ./init.sh
 ```
 
-Otherwise, start servers manually and document the process.
+Otherwise, start servers manually for a Convex + Vite app:
+
+```bash
+# Terminal 1: Start Convex dev server
+npx convex dev
+
+# Terminal 2: Start Vite dev server
+npm run dev
+```
+
+Verify both are running:
+- Convex dashboard: dashboard.convex.dev
+- Vite app: http://localhost:5173
 
 ### STEP 3: GET YOUR ASSIGNED FEATURE
 
@@ -111,20 +123,31 @@ Use browser automation tools:
 
 **Complete ALL applicable checks before marking any feature as passing:**
 
-- **Security:** Feature respects role permissions; unauthenticated access blocked; API checks auth (401/403); no cross-user data leaks via URL manipulation
-- **Real Data:** Create unique test data via UI, verify it appears, refresh to confirm persistence, delete and verify removal. No unexplained data (indicates mocks). Dashboard counts reflect real numbers
-- **Mock Data Grep:** Run STEP 5.6 grep checks - no hits in src/ (excluding tests). No globalThis, devStore, or dev-store patterns
-- **Server Restart:** For data features, run STEP 5.7 - data persists across server restart
+- **Security:** Feature respects role permissions; unauthenticated access blocked; Convex functions check auth; no cross-user data leaks via ID manipulation
+- **Real Data:** Create unique test data via mutation, verify it appears in useQuery, refresh to confirm persistence, delete and verify removal. No unexplained data (indicates mocks). Convex dashboard counts reflect real numbers
+- **Mock Data Grep:** Run STEP 5.6 grep checks - no hits in src/ or convex/ (excluding tests). No hardcoded arrays or empty returns
+- **Dev Restart:** For data features, run STEP 5.7 - data persists across `npx convex dev` restart
 - **Navigation:** All buttons link to existing routes, no 404s, back button works, edit/view/delete links have correct IDs
-- **Integration:** Zero JS console errors, no 500s in network tab, API data matches UI, loading/error states work
+- **Integration:** Zero JS console errors, no Convex errors in browser, useQuery data matches UI, loading/error states work
 
 ### STEP 5.6: MOCK DATA DETECTION (Before marking passing)
 
-Before marking a feature passing, grep for mock/placeholder data patterns in src/ (excluding test files): `globalThis`, `devStore`, `dev-store`, `mockDb`, `mockData`, `fakeData`, `sampleData`, `dummyData`, `testData`, `TODO.*real`, `TODO.*database`, `STUB`, `MOCK`, `isDevelopment`, `isDev`. Any hits in production code must be investigated and fixed. Also create unique test data (e.g., "TEST_12345"), verify it appears in UI, then delete and confirm removal - unexplained data indicates mock implementations.
+Before marking a feature passing, grep for mock/placeholder data patterns in src/ and convex/ (excluding test files):
 
-### STEP 5.7: SERVER RESTART PERSISTENCE TEST (MANDATORY for data features)
+```bash
+# Check for mock data patterns
+grep -r "mockData\|fakeData\|sampleData\|dummyData" --include="*.ts" --include="*.tsx" src/ convex/
+grep -r "hardcodedItems\|testUsers\|mockUsers" --include="*.ts" --include="*.tsx" src/ convex/
+grep -r "return \[\]" --include="*.ts" convex/  # Empty returns instead of DB queries
+grep -r "TODO.*real\|TODO.*database\|STUB\|MOCK" --include="*.ts" --include="*.tsx" src/ convex/
+grep -E "json-server|miragejs|msw" package.json
+```
 
-For any feature involving CRUD or data persistence: create unique test data (e.g., "RESTART_TEST_12345"), verify it exists, then fully stop and restart the dev server. After restart, verify the test data still exists. If data is gone, the implementation uses in-memory storage -- run STEP 5.6 greps, find the mock pattern, and replace with real database queries. Clean up test data after verification. This test catches in-memory stores like `globalThis.devStore` that pass all other tests but lose data on restart.
+All grep commands must return empty. Also create unique test data (e.g., "TEST_12345"), verify it appears in UI, then delete and confirm removal - unexplained data indicates mock implementations.
+
+### STEP 5.7: CONVEX DEV RESTART PERSISTENCE TEST (MANDATORY for data features)
+
+For any feature involving CRUD or data persistence: create unique test data (e.g., "RESTART_TEST_12345"), verify it exists in Convex dashboard, then stop the Convex dev server (Ctrl+C) and restart (`npx convex dev`). After restart, verify the test data still exists via useQuery or dashboard. Convex persists data to the cloud, so data should survive restarts. If data is gone, there may be a local cache or mock implementation. Clean up test data after verification.
 
 ### STEP 6: UPDATE FEATURE STATUS (CAREFULLY!)
 

@@ -1,0 +1,2 @@
+/** organizations types */
+export {};

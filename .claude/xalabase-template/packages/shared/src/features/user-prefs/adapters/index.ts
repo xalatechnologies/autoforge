@@ -1,0 +1,2 @@
+/** user-prefs adapters */
+export {};

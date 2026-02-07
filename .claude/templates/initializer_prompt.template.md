@@ -118,77 +118,72 @@ Create WIDE dependency graphs, not linear chains:
 
 ## MANDATORY INFRASTRUCTURE FEATURES (Indices 0-4)
 
-**CRITICAL:** Create these FIRST, before any functional features. These features ensure the application uses a real database, not mock data or in-memory storage.
+**CRITICAL:** Create these FIRST, before any functional features. These features ensure the application uses Convex backend correctly, not mock data or in-memory storage.
 
 | Index | Name | Test Steps |
 |-------|------|------------|
-| 0 | Database connection established | Start server → check logs for DB connection → health endpoint returns DB status |
-| 1 | Database schema applied correctly | Connect to DB directly → list tables → verify schema matches spec |
-| 2 | Data persists across server restart | Create via API → STOP server completely → START server → query API → data still exists |
+| 0 | Convex dev server starts successfully | Run `npx convex dev` → deployment succeeds → no errors |
+| 1 | Schema deployed to Convex | Tables visible in Convex dashboard → match schema.ts definitions |
+| 2 | Data persists across dev restarts | Create via mutation → restart `npx convex dev` → query returns data |
 | 3 | No mock data patterns in codebase | Run grep for prohibited patterns → must return empty |
-| 4 | Backend API queries real database | Check server logs → SQL/DB queries appear for API calls |
+| 4 | Convex functions query real database | Check Convex function logs → database reads/writes appear |
 
 **ALL other features MUST depend on indices [0, 1, 2, 3, 4].**
 
 ### Infrastructure Feature Descriptions
 
-**Feature 0 - Database connection established:**
+**Feature 0 - Convex dev server starts successfully:**
 ```text
 Steps:
-1. Start the development server
-2. Check server logs for database connection message
-3. Call health endpoint (e.g., GET /api/health)
-4. Verify response includes database status: connected
+1. Run: npx convex dev
+2. Verify deployment succeeds without errors
+3. Check terminal for "Convex functions ready!" message
+4. Verify .env.local contains VITE_CONVEX_URL
 ```
 
-**Feature 1 - Database schema applied correctly:**
+**Feature 1 - Schema deployed to Convex:**
 ```text
 Steps:
-1. Connect to database directly (sqlite3, psql, etc.)
-2. List all tables in the database
-3. Verify tables match what's defined in app_spec.txt
-4. Verify key columns exist on each table
+1. Open Convex dashboard (dashboard.convex.dev)
+2. Navigate to the project's Data tab
+3. Verify all tables from schema.ts appear
+4. Check each table has correct indexes defined
 ```
 
-**Feature 2 - Data persists across server restart (CRITICAL):**
+**Feature 2 - Data persists across dev restarts (CRITICAL):**
 ```text
 Steps:
-1. Create unique test data via API (e.g., POST /api/items with name "RESTART_TEST_12345")
-2. Verify data appears in API response (GET /api/items)
-3. STOP the server completely (kill by port to avoid killing unrelated Node processes):
-   - Unix/macOS: lsof -ti :$PORT | xargs kill -9 2>/dev/null || true && sleep 5
-   - Windows: FOR /F "tokens=5" %a IN ('netstat -aon ^| find ":$PORT"') DO taskkill /F /PID %a 2>nul
-   - Note: Replace $PORT with actual port (e.g., 3000)
-4. Verify server is stopped: lsof -ti :$PORT returns nothing (or netstat on Windows)
-5. RESTART the server: ./init.sh & sleep 15
-6. Query API again: GET /api/items
-7. Verify "RESTART_TEST_12345" still exists
-8. If data is GONE → CRITICAL FAILURE (in-memory storage detected)
-9. Clean up test data
+1. Create unique test data via mutation (e.g., item with title "RESTART_TEST_12345")
+2. Verify data appears in useQuery result or dashboard
+3. STOP the Convex dev server: Ctrl+C in terminal
+4. RESTART the server: npx convex dev
+5. Query the data again via useQuery hook
+6. Verify "RESTART_TEST_12345" still exists
+7. If data is GONE → CRITICAL FAILURE (Convex should persist data)
+8. Clean up test data via delete mutation
 ```
 
 **Feature 3 - No mock data patterns in codebase:**
 ```text
 Steps:
-1. Run: grep -r "globalThis\." --include="*.ts" --include="*.tsx" --include="*.js" src/
-2. Run: grep -r "dev-store\|devStore\|DevStore\|mock-db\|mockDb" --include="*.ts" --include="*.tsx" --include="*.js" src/
-3. Run: grep -r "mockData\|testData\|fakeData\|sampleData\|dummyData" --include="*.ts" --include="*.tsx" --include="*.js" src/
-4. Run: grep -r "TODO.*real\|TODO.*database\|TODO.*API\|STUB\|MOCK" --include="*.ts" --include="*.tsx" --include="*.js" src/
-5. Run: grep -r "isDevelopment\|isDev\|process\.env\.NODE_ENV.*development" --include="*.ts" --include="*.tsx" --include="*.js" src/
-6. Run: grep -r "new Map\(\)\|new Set\(\)" --include="*.ts" --include="*.tsx" --include="*.js" src/ 2>/dev/null
-7. Run: grep -E "json-server|miragejs|msw" package.json
-8. ALL grep commands must return empty (exit code 1)
-9. If any returns results → investigate and fix before passing
+1. Run: grep -r "mockData\|fakeData\|sampleData" --include="*.ts" --include="*.tsx" src/ convex/
+2. Run: grep -r "hardcodedItems\|testUsers\|dummyData" --include="*.ts" --include="*.tsx" src/ convex/
+3. Run: grep -r "return \[\]" --include="*.ts" convex/ # Empty array returns instead of DB queries
+4. Run: grep -r "TODO.*real\|TODO.*database\|STUB\|MOCK" --include="*.ts" --include="*.tsx" src/ convex/
+5. Run: grep -E "json-server|miragejs|msw" package.json
+6. ALL grep commands must return empty (exit code 1)
+7. If any returns results → investigate and fix before passing
 ```
 
-**Feature 4 - Backend API queries real database:**
+**Feature 4 - Convex functions query real database:**
 ```text
 Steps:
-1. Start server with verbose logging
-2. Make API call (e.g., GET /api/items)
-3. Check server logs
-4. Verify SQL query appears (SELECT, INSERT, etc.) or ORM query log
-5. If no DB queries in logs → implementation is using mock data
+1. Open Convex dashboard → Logs tab
+2. Call a query from the UI (e.g., list items)
+3. Check Convex function logs show the query executed
+4. Call a mutation (e.g., create item)
+5. Verify mutation appears in logs with document ID
+6. If no function logs → implementation may be bypassing Convex
 ```
 
 ---
@@ -315,11 +310,29 @@ This ensures no functionality is missed.
 Create a script called `init.sh` that future agents can use to quickly
 set up and run the development environment. The script should:
 
-1. Install any required dependencies
-2. Start any necessary servers or services
-3. Print helpful information about how to access the running application
+1. Install any required dependencies (`npm install`)
+2. Initialize Convex if not already done (`npx convex dev --once`)
+3. Start the Convex dev server in background (`npx convex dev &`)
+4. Start the Vite dev server (`npm run dev`)
+5. Print helpful information about how to access the running application
 
-Base the script on the technology stack specified in `app_spec.txt`.
+**Example init.sh for Convex + Vite:**
+```bash
+#!/bin/bash
+set -e
+
+echo "Installing dependencies..."
+npm install
+
+echo "Deploying Convex schema..."
+npx convex dev --once
+
+echo "Starting Convex dev server..."
+npx convex dev &
+
+echo "Starting Vite dev server..."
+npm run dev
+```
 
 ### THIRD TASK: Initialize Git
 
@@ -327,17 +340,30 @@ Create a git repository and make your first commit with:
 
 - init.sh (environment setup script)
 - README.md (project overview and setup instructions)
+- convex/schema.ts (Convex schema definition)
 - Any initial project structure files
 
-Note: Features are stored in the database (SQLite locally, or Convex if configured), not in a JSON file.
+Note: Features are stored in the Convex database, not in a JSON file.
 
-Commit message: "Initial setup: init.sh, project structure, and features created via API"
+Commit message: "Initial setup: init.sh, Convex schema, project structure, and features created via API"
 
 ### FOURTH TASK: Create Project Structure
 
-Set up the basic project structure based on what's specified in `app_spec.txt`.
-This typically includes directories for frontend, backend, and any other
-components mentioned in the spec.
+Set up the basic project structure for a Convex + React app:
+
+```
+project/
+├── convex/
+│   ├── schema.ts          # Table definitions
+│   ├── domain/            # Domain-specific functions
+│   └── lib/               # Shared utilities
+├── src/
+│   ├── main.tsx           # ConvexProvider setup
+│   └── components/        # React components
+├── package.json           # Dependencies (convex, convex-helpers)
+├── init.sh                # Setup script
+└── README.md              # Project documentation
+```
 
 ### ENDING THIS SESSION
 

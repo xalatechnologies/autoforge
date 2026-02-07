@@ -1,0 +1,2 @@
+/** dashboard adapters */
+export {};

@@ -1,0 +1,38 @@
+{
+  "name": "@xalabaas/web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5190",
+    "dev:clean": "rm -rf node_modules/.vite && vite --port 5190",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@xala/ds": "workspace:*",
+    "@xala/ds-registry": "workspace:*",
+    "@xala/ds-themes": "workspace:*",
+    "@xalabaas/app-shell": "workspace:*",
+    "@xalabaas/i18n": "workspace:*",
+    "@xalabaas/sdk": "workspace:*",
+    "@xalabaas/shared": "workspace:*",
+    "convex": "^1.31.7",
+    "mapbox-gl": "^3.17.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-map-gl": "^7.1.7",
+    "react-router-dom": "^6.22.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "eslint": "^9.10.0",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.8",
+    "vite-plugin-pwa": "^1.2.0"
+  }
+}

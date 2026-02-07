@@ -1,0 +1,44 @@
+/**
+ * Global Application Styles
+ * 
+ * Contains base resets and typography that apply to all apps.
+ * Import this ONCE in your app entry point alongside `@xala/ds/styles`.
+ * 
+ * @example
+ * ```typescript
+ * import '@xala/ds/styles';
+ * import '@xala/ds/global';
+ * ```
+ */
+
+/* Google Fonts - Inter family */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* Base typography and rendering */
+:root {
+    font-family: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Layout reset for SPA apps */
+html,
+body,
+#root {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+/* Utility animations */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}

@@ -1,0 +1,18 @@
+diff --git a/dist/designsystemet.d-CmbDpPhG.d.cts b/dist/designsystemet.d-CmbDpPhG.d.cts
+index f9602959005efa94143d31896a52a327bde87103..bb3c83ba4486d640145463d5a9ed85b1400a824f 100644
+--- a/dist/designsystemet.d-CmbDpPhG.d.cts
++++ b/dist/designsystemet.d-CmbDpPhG.d.cts
+@@ -46,3 +46,4 @@ declare module 'react' {
+     'data-variant'?: 'default' | 'outline' | 'tinted' | string;
+   }
+ }
++export {};
+diff --git a/dist/designsystemet.d-CmbDpPhG.d.ts b/dist/designsystemet.d-CmbDpPhG.d.ts
+index f9602959005efa94143d31896a52a327bde87103..bb3c83ba4486d640145463d5a9ed85b1400a824f 100644
+--- a/dist/designsystemet.d-CmbDpPhG.d.ts
++++ b/dist/designsystemet.d-CmbDpPhG.d.ts
+@@ -46,3 +46,4 @@ declare module 'react' {
+     'data-variant'?: 'default' | 'outline' | 'tinted' | string;
+   }
+ }
++export {};

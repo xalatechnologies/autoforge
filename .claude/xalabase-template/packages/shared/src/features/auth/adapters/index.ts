@@ -1,0 +1,2 @@
+/** auth adapters */
+export {};

@@ -25,22 +25,53 @@
       <styling>Tailwind CSS</styling>
       <state_management>React hooks and context</state_management>
       <routing>React Router for navigation</routing>
-      <port>3000</port>
+      <port>5173</port>
     </frontend>
     <backend>
-      <runtime>Node.js with Express</runtime>
-      <database>SQLite with better-sqlite3</database>
-      <port>3001</port>
+      <runtime>Convex (reactive backend)</runtime>
+      <database>Convex document database</database>
+      <realtime>WebSocket subscriptions (automatic)</realtime>
+      <helpers>convex-helpers (npm)</helpers>
     </backend>
     <communication>
-      <api>RESTful endpoints</api>
+      <api>Convex queries, mutations, and actions</api>
+      <http>HTTP routes via convex/http.ts (optional)</http>
     </communication>
   </technology_stack>
+
+  <convex_architecture>
+    <patterns>
+      <schema>defineSchema, defineTable with v.* validators</schema>
+      <queries>Pure functions, indexed reads, .collect() for small sets</queries>
+      <mutations>Transactional writes with argument validators</mutations>
+      <actions>External API calls (LLMs, email, third-party services)</actions>
+    </patterns>
+    <helpers>
+      <rate_limiting>rateLimitTables from convex-helpers</rate_limiting>
+      <crud>Auto-generated CRUD utilities</crud>
+      <rls>Row-level security for access control</rls>
+      <sessions>Client-generated session IDs</sessions>
+    </helpers>
+    <project_structure>
+      convex/
+        _generated/          - Auto-generated types (do not edit)
+        schema.ts            - Table definitions with validators
+        domain/              - Domain-specific queries/mutations
+        lib/                 - Shared utilities (RLS, CRUD, helpers)
+        http.ts              - HTTP routes (optional)
+      src/
+        main.tsx             - ConvexProvider setup
+        components/          - React components with useQuery/useMutation
+      .env.local             - VITE_CONVEX_URL (auto-generated)
+      package.json           - convex, convex-helpers dependencies
+    </project_structure>
+  </convex_architecture>
 
   <prerequisites>
     <environment_setup>
       - Node.js 18+ installed
       - npm or pnpm package manager
+      - Convex account (free at convex.dev)
       - Any API keys or external services needed
     </environment_setup>
   </prerequisites>
@@ -89,51 +120,52 @@
   </core_features>
 
   <database_schema>
-    <tables>
-      <users>
-        - id (PRIMARY KEY)
-        - email (UNIQUE, NOT NULL)
-        - password_hash (NOT NULL)
-        - name
-        - avatar_url
-        - preferences (JSON)
-        - created_at, updated_at
-      </users>
+    <!--
+      Convex uses TypeScript schema definitions in convex/schema.ts
+      Tables are defined using defineTable with v.* validators
+    -->
+    <convex_schema>
+      users: defineTable({
+        email: v.string(),
+        name: v.optional(v.string()),
+        avatarUrl: v.optional(v.string()),
+        preferences: v.optional(v.any()),
+        status: v.union(v.literal("active"), v.literal("inactive")),
+      })
+        .index("by_email", ["email"])
+
+      items: defineTable({
+        userId: v.id("users"),
+        title: v.string(),
+        description: v.optional(v.string()),
+        status: v.union(v.literal("draft"), v.literal("active"), v.literal("archived")),
+      })
+        .index("by_user", ["userId"])
+        .index("by_status", ["status"])
 
       <!-- Add more tables for your domain entities -->
-      <items>
-        - id (PRIMARY KEY)
-        - user_id (FOREIGN KEY -> users.id)
-        - title (NOT NULL)
-        - description
-        - status (enum: draft, active, archived)
-        - created_at, updated_at
-      </items>
-
-      <!-- Add additional tables as needed -->
-    </tables>
+    </convex_schema>
   </database_schema>
 
-  <api_endpoints_summary>
-    <authentication>
-      - POST /api/auth/register
-      - POST /api/auth/login
-      - POST /api/auth/logout
-      - GET /api/auth/me
-      - PUT /api/auth/profile
-      - POST /api/auth/forgot-password
-      - POST /api/auth/reset-password
-    </authentication>
+  <convex_functions>
+    <!--
+      Convex functions are TypeScript files in convex/ folder
+      Exported functions become API endpoints automatically
+    -->
+    <auth>
+      <!-- Use Better Auth or custom auth component -->
+      - queries: getCurrentUser, getUserById
+      - mutations: updateProfile, deleteAccount
+      - actions: sendPasswordReset, verifyEmail
+    </auth>
 
     <items>
-      - GET /api/items (list with pagination, search, filters)
-      - POST /api/items (create)
-      - GET /api/items/:id (get single)
-      - PUT /api/items/:id (update)
-      - DELETE /api/items/:id (delete)
+      - queries: list (paginated), getById, search
+      - mutations: create, update, delete
+      - internal: scheduled cleanup (cron)
     </items>
 
-    <!-- Add more endpoint categories as needed -->
+    <!-- Add more function groups as needed -->
   </api_endpoints_summary>
 
   <ui_layout>

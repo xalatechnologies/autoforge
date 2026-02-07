@@ -1,0 +1,2 @@
+/** notifications adapters */
+export {};

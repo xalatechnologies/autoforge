@@ -1,0 +1,461 @@
+/**
+ * Shared Mobile Responsive Styles
+ *
+ * Common mobile breakpoint styles used by all themes.
+ * This file is imported by theme extension files.
+ *
+ * Breakpoints:
+ * - Mobile: < 600px (max-width: 599px)
+ * - Tablet: 600px - 991px
+ * - Desktop: >= 992px
+ */
+
+/* ==========================================================================
+ * MOBILE BREAKPOINT (< 600px)
+ * ========================================================================== */
+
+@media (max-width: 599px) {
+  /* Main content padding */
+  .main-content-layout {
+    padding-left: var(--ds-spacing-3) !important;
+    padding-right: var(--ds-spacing-3) !important;
+  }
+
+  /* Mobile search wrapper */
+  .mobile-search-wrapper {
+    margin-left: calc(-1 * var(--ds-spacing-3));
+    margin-right: calc(-1 * var(--ds-spacing-3));
+    padding: 0 var(--ds-spacing-3);
+  }
+
+  /* Mobile PillTabs - horizontal scroll with hidden scrollbar */
+  .pill-tabs-container {
+    margin-left: calc(-1 * var(--ds-spacing-3));
+    margin-right: calc(-1 * var(--ds-spacing-3));
+    padding-left: var(--ds-spacing-3) !important;
+    padding-right: var(--ds-spacing-3) !important;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .pill-tabs-container::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Show mobile filter button */
+  .mobile-filter-button {
+    display: flex !important;
+  }
+
+  /* Mobile filter panel - bottom drawer style */
+  .listing-filter-panel {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    z-index: 1000;
+    margin: 0 !important;
+    border-radius: 16px 16px 0 0 !important;
+    border: none !important;
+    border-top: 1px solid var(--ds-color-neutral-border-default) !important;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.3) !important;
+    max-height: 85vh;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    /* Solid background - required! */
+    background-color: var(--ds-color-neutral-background-default) !important;
+    /* Hidden by default - shown when expanded */
+    transform: translateY(100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+    opacity: 0;
+    /* Ensure proper width */
+    width: 100vw !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+  }
+
+  /* When filter is expanded, show drawer */
+  .listing-filter-panel.filter-expanded,
+  .listing-filter-panel:has([aria-expanded="true"]) {
+    transform: translateY(0);
+    pointer-events: auto;
+    opacity: 1;
+  }
+
+  /* Drawer handle indicator */
+  .listing-filter-panel::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 36px;
+    height: 4px;
+    background-color: var(--ds-color-neutral-border-default);
+    border-radius: 2px;
+    z-index: 1;
+  }
+
+  /* Filter panel header - more padding for drawer */
+  .listing-filter-panel > button:first-child {
+    padding: 24px 16px 16px 16px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Filter panel animated content wrapper */
+  .listing-filter-panel > div:last-child {
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Filter panel inner content (has ref) */
+  .listing-filter-panel > div:last-child > div {
+    padding: 16px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Filter panel columns container - stack vertically */
+  .listing-filter-panel > div:last-child > div > div {
+    flex-direction: column !important;
+    display: flex !important;
+    width: 100% !important;
+    gap: 0 !important;
+  }
+
+  /* Individual filter columns - remove all padding */
+  .listing-filter-panel > div:last-child > div > div > div {
+    flex: none !important;
+    border-left: none !important;
+    padding: 0 !important;
+    margin-bottom: 24px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* All elements inside filter panel */
+  .listing-filter-panel * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Ensure inputs and sliders fit */
+  .listing-filter-panel input,
+  .listing-filter-panel select,
+  .listing-filter-panel input[type="range"] {
+    width: 100% !important;
+  }
+
+  /* Fix slider value labels from overflowing */
+  .listing-filter-panel span {
+    word-break: break-word;
+  }
+
+  /* Hide view toggle on mobile - only grid view needed */
+  .view-toggle-container {
+    display: none !important;
+  }
+
+  /* Backdrop overlay when drawer is open */
+  .listing-filter-panel.filter-expanded::after,
+  .listing-filter-panel:has([aria-expanded="true"])::after {
+    content: '';
+    position: fixed;
+    top: -100vh;
+    left: 0;
+    right: 0;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.4);
+    z-index: -1;
+  }
+
+  /* Add bottom padding to page content */
+  .listing-page-content, .listings-page {
+    padding-bottom: 16px !important;
+  }
+
+  /* Mobile listing grid - tighter gaps, single column, proper containment */
+  .listing-grid {
+    grid-template-columns: 1fr !important;
+    gap: var(--ds-spacing-3) !important;
+    width: 100% !important;
+    max-width: calc(100vw - 24px) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Mobile listing cards - ensure proper sizing */
+  .listing-card {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    min-width: 0 !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Card image container */
+  .listing-card > div:first-child {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  /* Card image itself */
+  .listing-card > div:first-child img {
+    width: 100% !important;
+    max-width: 100% !important;
+    object-fit: cover !important;
+  }
+
+  /* Mobile card content - prevent overflow */
+  .listing-card > div:last-child {
+    padding: var(--ds-spacing-4) !important;
+  }
+
+  /* Mobile card title - truncate */
+  .listing-card h3 {
+    font-size: var(--ds-font-size-md) !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Mobile card description - limit lines */
+  .listing-card p {
+    font-size: var(--ds-font-size-sm) !important;
+  }
+
+  /* Mobile card footer */
+  .listing-card-footer,
+  .listing-card > div:last-child > div:last-child {
+    padding: var(--ds-spacing-2) var(--ds-spacing-4) !important;
+    font-size: var(--ds-font-size-xs) !important;
+  }
+
+  /* Mobile card image - slightly shorter */
+  .listing-card > div:first-child {
+    height: 180px !important;
+  }
+
+  /* Main content area - ensure proper containment */
+  .main-content-layout,
+  .listings-page,
+  .listing-page-content {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Container - reduce padding on mobile */
+  .ds-container {
+    padding: 12px !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Prevent any horizontal overflow at root level */
+  #root, body, html {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+
+  /* Mobile breadcrumb - scrollable */
+  .ds-breadcrumb, nav[aria-label*="breadcrumb"], nav[aria-label*="Breadcrumb"] {
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: var(--ds-spacing-2);
+    margin-bottom: calc(-1 * var(--ds-spacing-2));
+  }
+  .ds-breadcrumb::-webkit-scrollbar, nav[aria-label*="breadcrumb"]::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Mobile image slider - full width, shorter height */
+  .image-slider {
+    margin-left: calc(-1 * var(--ds-spacing-3));
+    margin-right: calc(-1 * var(--ds-spacing-3));
+  }
+  .image-slider .image-slider-main {
+    height: 260px !important;
+    border-radius: 0 !important;
+  }
+  /* Hide thumbnails on mobile to save space */
+  .image-slider .image-slider-thumbnails {
+    display: none;
+  }
+  /* Smaller nav arrows on mobile */
+  .image-slider .image-slider-main button {
+    width: 40px !important;
+    height: 40px !important;
+  }
+  .image-slider .image-slider-main button svg {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  /* Mobile listing detail layout - stack columns */
+  .listing-detail-layout {
+    gap: var(--ds-spacing-4) !important;
+  }
+
+  /* Mobile booking sidebar - sticky bottom */
+  .booking-sidebar-mobile {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background-color: var(--ds-color-neutral-surface-default);
+    border-top: 1px solid var(--ds-color-neutral-border-default);
+    padding: var(--ds-spacing-3) var(--ds-spacing-4);
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Mobile card footer - smaller text */
+  .listing-card-footer {
+    padding: var(--ds-spacing-3) !important;
+  }
+
+  /* Mobile tabs - scrollable */
+  .listing-tabs-container {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .listing-tabs-container::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Mobile key facts - horizontal scroll */
+  .key-facts-grid {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    gap: var(--ds-spacing-2) !important;
+    padding-bottom: var(--ds-spacing-2);
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .key-facts-grid::-webkit-scrollbar {
+    display: none;
+  }
+  .key-facts-grid > * {
+    flex-shrink: 0;
+    min-width: 100px;
+  }
+
+  /* Mobile amenity badges - wrap tighter */
+  .amenity-grid, .amenities-grid {
+    gap: var(--ds-spacing-2) !important;
+  }
+
+  /* Mobile contact card - smaller padding */
+  .contact-card, .listing-contact-card {
+    padding: var(--ds-spacing-3) !important;
+  }
+
+  /* Mobile section headers - smaller */
+  .listing-section-header, .section-header {
+    font-size: var(--ds-font-size-lg) !important;
+  }
+
+  /* Mobile detail main title - smaller */
+  .listing-detail-title {
+    font-size: var(--ds-font-size-xl) !important;
+  }
+
+  /* Mobile price display - inline */
+  .price-display {
+    flex-direction: row !important;
+    align-items: baseline !important;
+    gap: var(--ds-spacing-2) !important;
+  }
+
+  /* Mobile map - shorter height */
+  .listing-map-container {
+    margin-left: calc(-1 * var(--ds-spacing-3));
+    margin-right: calc(-1 * var(--ds-spacing-3));
+    border-radius: 0 !important;
+  }
+
+  /* Mobile rules/FAQ - full width cards */
+  .rules-list, .faq-list {
+    margin-left: calc(-1 * var(--ds-spacing-3));
+    margin-right: calc(-1 * var(--ds-spacing-3));
+    padding-left: var(--ds-spacing-3);
+    padding-right: var(--ds-spacing-3);
+  }
+
+  /* Mobile opening hours table - compact */
+  .opening-hours-table td {
+    padding: var(--ds-spacing-2) !important;
+    font-size: var(--ds-font-size-sm) !important;
+  }
+}
+
+/* ==========================================================================
+ * TABLET BREAKPOINT (600px - 991px)
+ * ========================================================================== */
+
+@media (min-width: 600px) and (max-width: 991px) {
+  /* Tablet listing grid - 2 columns */
+  .listing-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .listing-grid[data-max-columns="1"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Tablet image slider - medium height */
+  .image-slider .image-slider-main {
+    height: 320px !important;
+  }
+
+  /* Tablet key facts - wrap on 2 rows */
+  .key-facts-grid {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: var(--ds-spacing-3) !important;
+  }
+  .key-facts-grid > * {
+    flex: 0 0 calc(33.333% - var(--ds-spacing-3));
+    min-width: 120px;
+  }
+}
+
+/* ==========================================================================
+ * LIST VIEW RESPONSIVE
+ * ========================================================================== */
+
+@media (max-width: 767px) {
+  .listing-list-item {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .listing-list-item > div:first-child {
+    width: 100% !important;
+    min-width: unset !important;
+    max-height: 200px;
+  }
+
+  .listing-list-item > div:last-child:not(:nth-child(2)) {
+    display: none !important;
+  }
+}
