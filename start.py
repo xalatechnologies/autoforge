@@ -37,9 +37,20 @@ def check_spec_exists(project_dir: Path) -> bool:
     Check if valid spec files exist for a project.
 
     Checks in order:
-    1. Project prompts directory: {project_dir}/prompts/app_spec.txt
-    2. Project root (legacy): {project_dir}/app_spec.txt
+    1. Xalabase template: {project_dir}/CLAUDE.md (xalabase projects always have a spec)
+    2. Project prompts directory: {project_dir}/prompts/app_spec.txt
+    3. Project root (legacy): {project_dir}/app_spec.txt
     """
+    # Xalabase projects use CLAUDE.md as their spec
+    template_type_file = project_dir / ".autoforge" / "template_type"
+    if template_type_file.exists():
+        try:
+            if template_type_file.read_text(encoding="utf-8").strip() == "xalabase":
+                claude_md = project_dir / "CLAUDE.md"
+                return claude_md.exists()
+        except (OSError, PermissionError):
+            pass
+
     # Check project prompts directory first
     project_prompts = get_project_prompts_dir(project_dir)
     spec_file = project_prompts / "app_spec.txt"
@@ -178,7 +189,7 @@ def get_new_project_info() -> tuple[str, Path] | None:
     return name, project_path
 
 
-def ensure_project_scaffolded(project_name: str, project_dir: Path) -> Path:
+def ensure_project_scaffolded(project_name: str, project_dir: Path, template_type: str = "default") -> Path:
     """
     Ensure project directory exists with prompt templates and is registered.
 
@@ -187,6 +198,7 @@ def ensure_project_scaffolded(project_name: str, project_dir: Path) -> Path:
     Args:
         project_name: Name of the project
         project_dir: Absolute path to the project directory
+        template_type: Template to use ("default" or "xalabase")
 
     Returns:
         The project directory path
@@ -197,10 +209,11 @@ def ensure_project_scaffolded(project_name: str, project_dir: Path) -> Path:
     # Scaffold prompts (copies templates if they don't exist)
     print(f"\nSetting up project: {project_name}")
     print(f"Location: {project_dir}")
-    scaffold_project_prompts(project_dir)
+    print(f"Template: {template_type}")
+    scaffold_project_prompts(project_dir, template_type=template_type)
 
     # Register in registry
-    register_project(project_name, project_dir)
+    register_project(project_name, project_dir, template_type=template_type)
 
     return project_dir
 
@@ -327,15 +340,37 @@ def ask_spec_creation_choice() -> str | None:
         print("Invalid choice. Please enter 1, 2, or b.")
 
 
+def ask_template_choice() -> str:
+    """Ask user which project template to use.
+
+    Returns:
+        'default' or 'xalabase'
+    """
+    print("\n" + "=" * 50)
+    print("  Choose Project Template")
+    print("=" * 50)
+    print("  1. Xalabase (full monorepo - web, backoffice, minside, SDK, DS)")
+    print("  2. Default (single Convex app)")
+    print()
+
+    while True:
+        choice = input("Select [1]: ").strip() or "1"
+        if choice == "1":
+            return "xalabase"
+        elif choice == "2":
+            return "default"
+        print("Please enter 1 or 2.")
+
+
 def create_new_project_flow() -> tuple[str, Path] | None:
     """
     Complete flow for creating a new project.
 
     1. Get project name and path
-    2. Create project directory and scaffold prompts
-    3. Ask: Claude or Manual?
-    4. If Claude: Run /create-spec with project path
-    5. If Manual: Show paths, wait for Enter
+    2. Choose template type
+    3. Create project directory and scaffold prompts
+    4. If default: Ask Claude or Manual spec creation
+    5. If xalabase: Skip spec (CLAUDE.md already provided)
     6. Return (name, path) tuple if successful
     """
     project_info = get_new_project_info()
@@ -344,10 +379,21 @@ def create_new_project_flow() -> tuple[str, Path] | None:
 
     project_name, project_path = project_info
 
-    # Create project directory and scaffold prompts FIRST
-    project_dir = ensure_project_scaffolded(project_name, project_path)
+    # Choose template type
+    template_type = ask_template_choice()
 
-    # Ask user how they want to handle spec creation
+    # Create project directory and scaffold prompts
+    project_dir = ensure_project_scaffolded(project_name, project_path, template_type=template_type)
+
+    # Xalabase projects are ready immediately (CLAUDE.md + full monorepo)
+    if template_type == "xalabase":
+        print("\n" + "-" * 50)
+        print("Xalabase monorepo scaffolded successfully!")
+        print("The project is ready with CLAUDE.md and full monorepo structure.")
+        print("Run 'pnpm install' in the project directory to install dependencies.")
+        return project_name, project_dir
+
+    # Default template: ask user how they want to handle spec creation
     choice = ask_spec_creation_choice()
 
     if choice == 'b':

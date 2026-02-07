@@ -14,7 +14,7 @@ import shutil
 from pathlib import Path
 
 # Import centralized path constants
-from autoforge.data.paths import EXAMPLES_DIR, TEMPLATES_DIR
+from autoforge.data.paths import EXAMPLES_DIR, TEMPLATES_DIR, XALABASE_TEMPLATE_DIR
 
 
 def get_project_prompts_dir(project_dir: Path) -> Path:
@@ -300,24 +300,34 @@ def get_app_spec(project_dir: Path) -> str:
     raise FileNotFoundError(f"No app_spec.txt found for project: {project_dir}")
 
 
-def scaffold_project_prompts(project_dir: Path) -> Path:
+def scaffold_project_prompts(project_dir: Path, template_type: str = "default") -> Path:
     """
     Create the project prompts directory and copy base templates.
 
     This sets up a new project with template files that can be customized.
+    For 'xalabase' template type, clones the full monorepo scaffold instead.
 
     Args:
         project_dir: The absolute path to the project directory
+        template_type: The template type to use ("default" or "xalabase")
 
     Returns:
         The path to the project prompts directory
     """
+    # Xalabase template: clone the full monorepo scaffold
+    if template_type == "xalabase":
+        return _scaffold_xalabase_project(project_dir)
+
+    # Default template: copy individual prompt files
     project_prompts = get_project_prompts_dir(project_dir)
     project_prompts.mkdir(parents=True, exist_ok=True)
 
     # Create .autoforge directory with .gitignore for runtime files
     from autoforge.data.paths import ensure_autoforge_dir
     autoforge_dir = ensure_autoforge_dir(project_dir)
+
+    # Write template_type marker
+    (autoforge_dir / "template_type").write_text("default", encoding="utf-8")
 
     # Define template mappings: (source_template, destination_name)
     templates = [
@@ -356,14 +366,92 @@ def scaffold_project_prompts(project_dir: Path) -> Path:
     return project_prompts
 
 
+def _scaffold_xalabase_project(project_dir: Path) -> Path:
+    """
+    Scaffold a project using the xalabase full monorepo template.
+
+    Copies the entire xalabase-template directory tree into the project directory.
+    Writes a template_type marker so the orchestrator knows to use monorepo mode.
+
+    Args:
+        project_dir: The absolute path to the project directory
+
+    Returns:
+        The project directory path
+    """
+    if not XALABASE_TEMPLATE_DIR.exists():
+        raise FileNotFoundError(
+            f"Xalabase template not found at: {XALABASE_TEMPLATE_DIR}\n"
+            "Ensure the template is available in .claude/xalabase-template/"
+        )
+
+    # Copy the entire monorepo template to the project directory
+    # Use ignore_dangling_symlinks to skip broken symlinks (e.g. docs -> apps/dev-docs)
+    print(f"  Cloning xalabase monorepo template to {project_dir}...")
+    shutil.copytree(
+        str(XALABASE_TEMPLATE_DIR),
+        str(project_dir),
+        dirs_exist_ok=True,
+        symlinks=False,
+        ignore_dangling_symlinks=True,
+        ignore=shutil.ignore_patterns(
+            "node_modules",
+            ".git",
+            "__pycache__",
+            ".next",
+            "dist",
+        ),
+    )
+
+    # Create .autoforge directory with template_type marker
+    from autoforge.data.paths import ensure_autoforge_dir
+    autoforge_dir = ensure_autoforge_dir(project_dir)
+    (autoforge_dir / "template_type").write_text("xalabase", encoding="utf-8")
+
+    print("  Xalabase monorepo template scaffolded successfully.")
+    return project_dir
+
+
+def get_template_type(project_dir: Path) -> str:
+    """
+    Detect the template type used for a project.
+
+    Reads the .autoforge/template_type marker file. Falls back to "default"
+    for projects created before template_type was introduced.
+
+    Args:
+        project_dir: The project directory
+
+    Returns:
+        The template type string ("default" or "xalabase")
+    """
+    marker_path = project_dir / ".autoforge" / "template_type"
+    if marker_path.exists():
+        try:
+            return marker_path.read_text(encoding="utf-8").strip()
+        except (OSError, PermissionError):
+            pass
+
+    # Heuristic fallback: if CLAUDE.md exists and has XalaBaaS content, it's xalabase
+    claude_md = project_dir / "CLAUDE.md"
+    if claude_md.exists():
+        try:
+            content = claude_md.read_text(encoding="utf-8")[:200]
+            if "XalaBaaS" in content or "xalabase" in content.lower():
+                return "xalabase"
+        except (OSError, PermissionError):
+            pass
+
+    return "default"
+
+
 def has_project_prompts(project_dir: Path) -> bool:
     """
     Check if a project has valid prompts set up.
 
     A project has valid prompts if:
-    1. The prompts directory exists, AND
-    2. app_spec.txt exists within it, AND
-    3. app_spec.txt contains the <project_specification> tag
+    - For default template: app_spec.txt exists with <project_specification> tag
+    - For xalabase template: CLAUDE.md exists in the project directory
 
     Args:
         project_dir: The project directory to check
@@ -371,6 +459,12 @@ def has_project_prompts(project_dir: Path) -> bool:
     Returns:
         True if valid project prompts exist, False otherwise
     """
+    # Check if this is a xalabase project
+    template_type = get_template_type(project_dir)
+    if template_type == "xalabase":
+        return (project_dir / "CLAUDE.md").exists()
+
+    # Default template: check for app_spec.txt
     project_prompts = get_project_prompts_dir(project_dir)
     app_spec = project_prompts / "app_spec.txt"
 

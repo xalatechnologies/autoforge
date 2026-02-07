@@ -11,8 +11,8 @@
  * @see https://stack.convex.dev/triggers
  */
 
-import { DataModel } from "../_generated/dataModel";
-import { mutation as rawMutation, internalMutation as rawInternalMutation } from "../_generated/server";
+import { DataModel } from "../../../../../../convex/_generated/dataModel";
+import { mutation as rawMutation, internalMutation as rawInternalMutation } from "../../../../../../convex/_generated/server";
 import { Triggers } from "convex-helpers/server/triggers";
 import { customMutation } from "convex-helpers/server/customFunctions";
 

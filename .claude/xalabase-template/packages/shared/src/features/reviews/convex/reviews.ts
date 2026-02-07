@@ -9,12 +9,12 @@
  *   - Audit logging via audit component
  */
 
-import { mutation, query } from "../_generated/server";
-import { components } from "../_generated/api";
+import { mutation, query } from "../../../../../../convex/_generated/server";
+import { components } from "../../../../../../convex/_generated/api";
 import { v } from "convex/values";
-import type { Id } from "../_generated/dataModel";
-import { requireActiveUser } from "../lib/auth";
-import { rateLimit, rateLimitKeys } from "../lib/rateLimits";
+import type { Id } from "../../../../../../convex/_generated/dataModel";
+import { requireActiveUser } from "../../_shared/lib/auth";
+import { rateLimit, rateLimitKeys } from "../../_shared/lib/rateLimits";
 
 // =============================================================================
 // QUERY FACADES

@@ -5,10 +5,10 @@
  * Use these instead of raw query/mutation/action for tenant-scoped operations.
  */
 
-import { query, mutation, action, internalQuery, internalMutation } from "../_generated/server";
-import { QueryCtx, MutationCtx, ActionCtx } from "../_generated/server";
+import { query, mutation, action, internalQuery, internalMutation } from "../../../../../../convex/_generated/server";
+import { QueryCtx, MutationCtx, ActionCtx } from "../../../../../../convex/_generated/server";
 import { customQuery, customMutation, customAction, customCtx, NoOp } from "convex-helpers/server/customFunctions";
-import { Id } from "../_generated/dataModel";
+import { Id } from "../../../../../../convex/_generated/dataModel";
 
 // =============================================================================
 // TENANT CONTEXT EXTRACTION

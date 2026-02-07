@@ -1103,12 +1103,17 @@ class ParallelOrchestrator:
         debug_log.log("INIT", "Starting initializer subprocess",
             project_dir=str(self.project_dir))
 
+        # Detect template type
+        from autoforge.core.prompts import get_template_type
+        template_type = get_template_type(self.project_dir)
+
         cmd = [
             sys.executable, "-u",
             str(AUTOFORGE_ROOT / "autonomous_agent_demo.py"),
             "--project-dir", str(self.project_dir),
             "--agent-type", "initializer",
             "--max-iterations", "1",
+            "--template", template_type,
         ]
         if self.model:
             cmd.extend(["--model", self.model])
@@ -1446,6 +1451,30 @@ class ParallelOrchestrator:
             print("  INITIALIZATION PHASE", flush=True)
             print("=" * 70, flush=True)
             print("No features found - running initializer agent first...", flush=True)
+
+            # Detect template type for xalabase-specific setup
+            from autoforge.core.prompts import get_template_type
+            template_type = get_template_type(self.project_dir)
+
+            if template_type == "xalabase":
+                print("Xalabase monorepo detected - running pnpm install...", flush=True)
+                try:
+                    install_proc = subprocess.run(
+                        ["pnpm", "install"],
+                        cwd=str(self.project_dir),
+                        capture_output=True,
+                        text=True,
+                        timeout=300,
+                    )
+                    if install_proc.returncode != 0:
+                        print(f"Warning: pnpm install failed: {install_proc.stderr[:500]}", flush=True)
+                    else:
+                        print("pnpm install completed successfully.", flush=True)
+                except FileNotFoundError:
+                    print("Warning: pnpm not found. Run 'pnpm install' manually.", flush=True)
+                except subprocess.TimeoutExpired:
+                    print("Warning: pnpm install timed out.", flush=True)
+
             print("NOTE: This may take 10-20+ minutes to generate features.", flush=True)
             print(flush=True)
 

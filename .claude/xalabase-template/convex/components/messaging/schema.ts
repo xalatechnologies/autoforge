@@ -1,1 +1,1 @@
-export * from '../../../packages/shared/src/features/messaging/convex/schema';
+export { default } from '../../../packages/shared/src/features/messaging/convex/schema';

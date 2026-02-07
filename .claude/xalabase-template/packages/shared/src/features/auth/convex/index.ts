@@ -4,7 +4,6 @@
 export * from './schema';
 export * as queries from './queries';
 export * as mutations from './mutations';
-export * from './convex';
 
 // App-level auth functions (use root convex/_generated/server)
 export * as callback from './callback';

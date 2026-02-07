@@ -1,4 +1,4 @@
-import type { QueryCtx } from "../_generated/server";
+import type { QueryCtx } from "../../../../../../convex/_generated/server";
 
 /**
  * Batch-fetch documents by IDs. Avoids N+1 query pattern.

@@ -1,1 +1,5 @@
-export * from './convex';
+/**
+ * Audit Domain - Convex Exports
+ */
+export * from './schema';
+export * as functions from './functions';

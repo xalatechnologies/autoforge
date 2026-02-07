@@ -17,8 +17,8 @@ import {
     internalQuery,
     mutation,
     query,
-} from "../_generated/server";
-import type { Id } from "../_generated/dataModel";
+} from "../../../../../../convex/_generated/server";
+import type { Id } from "../../../../../../convex/_generated/dataModel";
 
 // =============================================================================
 // EVENT EMISSION
@@ -264,7 +264,7 @@ export async function emitEvent(
     payload: Record<string, unknown>
 ): Promise<void> {
     // Use internal import to avoid circular dependencies
-    const { internal } = await import("../_generated/api");
+    const { internal } = await import("../../../../../../convex/_generated/api");
     await ctx.runMutation(internal.lib.eventBus.emit, {
         topic,
         tenantId,

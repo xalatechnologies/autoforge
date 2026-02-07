@@ -38,6 +38,12 @@ TEMPLATES_DIR = PROJECT_ROOT / ".claude" / "templates"
 # Examples directory
 EXAMPLES_DIR = PROJECT_ROOT / "examples"
 
+# Xalabase monorepo template directory
+XALABASE_TEMPLATE_DIR = PROJECT_ROOT / ".claude" / "xalabase-template"
+
+# Valid template types for project creation
+VALID_TEMPLATE_TYPES = ("default", "xalabase")
+
 # ---------------------------------------------------------------------------
 # .gitignore content written into every .autoforge/ directory
 # ---------------------------------------------------------------------------

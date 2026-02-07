@@ -1,1 +1,1 @@
-export * from '../../../packages/shared/src/features/analytics/convex/schema';
+export { default } from '../../../packages/shared/src/features/analytics/convex/schema';

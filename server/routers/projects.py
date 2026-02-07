@@ -206,21 +206,24 @@ async def create_project(project: ProjectCreate):
             )
 
     # Scaffold prompts
-    _scaffold_project_prompts(project_path)
+    _scaffold_project_prompts(project_path, template_type=project.template_type)
 
     # Register in registry
     try:
-        register_project(name, project_path)
+        register_project(name, project_path, template_type=project.template_type)
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail=f"Failed to register project: {e}"
         )
 
+    # Xalabase projects come with CLAUDE.md and are immediately ready
+    has_spec = project.template_type == "xalabase"
+
     return ProjectSummary(
         name=name,
         path=project_path.as_posix(),
-        has_spec=False,  # Just created, no spec yet
+        has_spec=has_spec,
         stats=ProjectStats(passing=0, total=0, percentage=0.0),
         default_concurrency=3,
     )

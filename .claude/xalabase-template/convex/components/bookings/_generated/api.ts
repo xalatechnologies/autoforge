@@ -12,6 +12,7 @@ import type * as allocations from "../allocations.js";
 import type * as availability from "../availability.js";
 import type * as blocks from "../blocks.js";
 import type * as contract from "../contract.js";
+import type * as index from "../index.js";
 import type * as mutations from "../mutations.js";
 import type * as queries from "../queries.js";
 
@@ -27,6 +28,7 @@ const fullApi: ApiFromModules<{
   availability: typeof availability;
   blocks: typeof blocks;
   contract: typeof contract;
+  index: typeof index;
   mutations: typeof mutations;
   queries: typeof queries;
 }> = anyApi as any;

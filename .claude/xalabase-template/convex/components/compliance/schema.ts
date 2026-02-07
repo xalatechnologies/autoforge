@@ -1,1 +1,1 @@
-export * from '../../../packages/shared/src/features/compliance/convex/schema';
+export { default } from '../../../packages/shared/src/features/compliance/convex/schema';

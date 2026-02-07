@@ -13,6 +13,7 @@ import type * as contract from "../contract.js";
 import type * as discounts from "../discounts.js";
 import type * as holidays from "../holidays.js";
 import type * as import_ from "../import.js";
+import type * as index from "../index.js";
 import type * as mutations from "../mutations.js";
 import type * as queries from "../queries.js";
 import type * as surcharges from "../surcharges.js";
@@ -30,6 +31,7 @@ const fullApi: ApiFromModules<{
   discounts: typeof discounts;
   holidays: typeof holidays;
   import: typeof import_;
+  index: typeof index;
   mutations: typeof mutations;
   queries: typeof queries;
   surcharges: typeof surcharges;

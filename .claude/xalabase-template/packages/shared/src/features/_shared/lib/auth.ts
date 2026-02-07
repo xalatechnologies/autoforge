@@ -1,5 +1,5 @@
-import type { MutationCtx, QueryCtx } from "../_generated/server";
-import type { Id } from "../_generated/dataModel";
+import type { MutationCtx, QueryCtx } from "../../../../../../convex/_generated/server";
+import type { Id } from "../../../../../../convex/_generated/dataModel";
 
 /**
  * Validate that a userId refers to an active user in the core users table.

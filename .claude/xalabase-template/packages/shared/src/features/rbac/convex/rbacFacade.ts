@@ -4,10 +4,10 @@
  * Does NOT overwrite convex/rbac/index.ts.
  */
 
-import { mutation, query } from "../_generated/server";
-import { components } from "../_generated/api";
+import { mutation, query } from "../../../../../../convex/_generated/server";
+import { components } from "../../../../../../convex/_generated/api";
 import { v } from "convex/values";
-import { requireActiveUser } from "../lib/auth";
+import { requireActiveUser } from "../../_shared/lib/auth";
 
 // =============================================================================
 // ROLE QUERIES

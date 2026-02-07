@@ -3,7 +3,7 @@
  */
 
 import { v } from "convex/values";
-import { defineContract } from "../../lib/componentContract";
+import { defineContract } from "../../_shared/lib/componentContract";
 
 export const CONTRACT = defineContract({
     name: "bookings",

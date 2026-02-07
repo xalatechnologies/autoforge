@@ -144,6 +144,7 @@ async def run_autonomous_agent(
     agent_type: Optional[str] = None,
     testing_feature_id: Optional[int] = None,
     testing_feature_ids: Optional[list[int]] = None,
+    template_type: str = "default",
 ) -> None:
     """
     Run the autonomous agent loop.
@@ -158,12 +159,15 @@ async def run_autonomous_agent(
         agent_type: Type of agent: "initializer", "coding", "testing", or None (auto-detect)
         testing_feature_id: For testing agents, the pre-claimed feature ID to test (legacy single mode)
         testing_feature_ids: For testing agents, list of feature IDs to batch test
+        template_type: Project template type ("default" or "xalabase")
     """
     print("\n" + "=" * 70)
     print("  AUTONOMOUS CODING AGENT")
     print("=" * 70)
     print(f"\nProject directory: {project_dir}")
     print(f"Model: {model}")
+    if template_type != "default":
+        print(f"Template: {template_type}")
     if agent_type:
         print(f"Agent type: {agent_type}")
     if yolo_mode:
@@ -195,6 +199,8 @@ async def run_autonomous_agent(
 
     if is_initializer:
         print("Running as INITIALIZER agent")
+        if template_type == "xalabase":
+            print("Template: xalabase monorepo (using CLAUDE.md context)")
         print()
         print("=" * 70)
         print("  NOTE: Initialization takes 10-20+ minutes!")

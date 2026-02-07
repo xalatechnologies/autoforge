@@ -11,6 +11,7 @@
 import type * as contract from "../contract.js";
 import type * as events from "../events.js";
 import type * as functions from "../functions.js";
+import type * as index from "../index.js";
 import type * as lifecycle from "../lifecycle.js";
 
 import type {
@@ -24,6 +25,7 @@ const fullApi: ApiFromModules<{
   contract: typeof contract;
   events: typeof events;
   functions: typeof functions;
+  index: typeof index;
   lifecycle: typeof lifecycle;
 }> = anyApi as any;
 

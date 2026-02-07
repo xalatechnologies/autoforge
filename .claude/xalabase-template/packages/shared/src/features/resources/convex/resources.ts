@@ -9,8 +9,8 @@
  * - Clone: clone() copies related data (amenities, pricing, addons) across components
  */
 
-import { mutation, query } from "../_generated/server";
-import { components } from "../_generated/api";
+import { mutation, query } from "../../../../../../convex/_generated/server";
+import { components } from "../../../../../../convex/_generated/api";
 import { v } from "convex/values";
 
 // =============================================================================

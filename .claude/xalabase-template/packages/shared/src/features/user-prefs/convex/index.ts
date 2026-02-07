@@ -1,1 +1,5 @@
-export * from './convex';
+/**
+ * User Prefs Domain - Convex Exports
+ */
+export * from './schema';
+export * as functions from './functions';

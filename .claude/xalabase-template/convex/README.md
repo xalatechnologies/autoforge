@@ -1,87 +1,90 @@
-# XalaBaaS Convex Backend
+# Welcome to your Convex functions directory!
 
-Plug-and-play component architecture with 17 isolated Convex components.
+Write your Convex functions here.
+See https://docs.convex.dev/functions for more.
 
-## Structure
+A query function that takes two arguments looks like:
 
-```
-convex/
-  convex.config.ts          — App config, registers all 17 components
-  schema.ts                 — Core tables (tenants, users, resources, event bus, registry)
-  types.ts                  — Status enums and document types
+```ts
+// convex/myFunctions.ts
+import { query } from "./_generated/server";
+import { v } from "convex/values";
 
-  domain/                   — Facade functions (SDK-facing API)
-    resources.ts            — Direct (core table, not a component)
-    search.ts               — Direct (reads core resources)
-    reviews.ts              — Facade → components.reviews
-    notifications.ts        — Facade → components.notifications
-    favorites.ts            — Facade → components.userPrefs
-    messaging.ts            — Facade → components.messaging
-    categories.ts           — Facade → components.catalog
-    amenities.ts            — Facade → components.catalog
-    bookings.ts             — Direct (pre-migration)
-    pricing.ts              — Direct (pre-migration)
-    billing.ts              — Direct (pre-migration)
-    ...
+export const myQueryFunction = query({
+  // Validators for arguments.
+  args: {
+    first: v.number(),
+    second: v.string(),
+  },
 
-  components/               — 17 isolated Convex components
-    audit/                  — General-purpose audit log
-    reviews/                — Reviews with moderation
-    notifications/          — Notification feed + preferences
-    user-prefs/             — Favorites + saved filters
-    messaging/              — Conversations + messages
-    catalog/                — Categories + amenities
-    analytics/              — Metrics + reporting
-    bookings/               — Booking engine
-    pricing/                — Pricing engine (9 tables)
-    addons/                 — Booking addons
-    seasons/                — Seasonal management
-    auth/                   — Sessions + tokens
-    rbac/                   — Roles + permissions
-    billing/                — Payments + invoices
-    compliance/             — GDPR (consent, DSAR, policies)
-    tenant-config/          — Feature flags + branding
-    integrations/           — External service integrations
+  // Function implementation.
+  handler: async (ctx, args) => {
+    // Read the database as many times as you need here.
+    // See https://docs.convex.dev/database/reading-data.
+    const documents = await ctx.db.query("tablename").collect();
 
-  lib/                      — Platform infrastructure
-    eventBus.ts             — Outbox pattern event bus
-    componentContract.ts    — Component API contracts
-    componentMiddleware.ts  — Middleware chain + hasModuleEnabled
-    rateLimits.ts           — Rate limiting definitions
-    convex_lib.ts           — convex-helpers re-exports
-    triggers.ts             — Database triggers with event emission
-    functions.ts            — Tenant-aware function builders
-    rls.ts                  — Row-level security rules
-    crud.ts                 — Auto-generated CRUD
-    validators.ts           — Validator utilities
+    // Arguments passed from the client are properties of the args object.
+    console.log(args.first, args.second);
 
-  migrations/               — Data migration scripts
-    index.ts                — Migration runner + per-domain migrations
-
-  seeds.ts                  — Core table seed data
-  seedComponents.ts         — Component table seed data
-  seedsV3.ts / seedsFull.ts — Extended seed variants
+    // Write arbitrary JavaScript here: filter, aggregate, build derived data,
+    // remove non-public properties, or create new objects.
+    return documents;
+  },
+});
 ```
 
-## Commands
+Using this query function in a React component looks like:
 
-```bash
-# Deploy (generates _generated/ for all components)
-npx convex dev --once
-
-# Seed data
-npx convex run seeds:seedAll
-npx convex run seedComponents:seedAll
-
-# Run component functions directly
-npx convex run --component audit functions:listForTenant '{"tenantId":"..."}'
-npx convex run --component reviews functions:list '{"tenantId":"..."}'
-
-# Migrations
-npx convex run migrations/index:getMigrationStatus
-npx convex run migrations/index:runAllMigrations
+```ts
+const data = useQuery(api.myFunctions.myQueryFunction, {
+  first: 10,
+  second: "hello",
+});
 ```
 
-## Adding a New Component
+A mutation function looks like:
 
-See `docs/COMPONENT_ARCHITECTURE.md` for full guide.
+```ts
+// convex/myFunctions.ts
+import { mutation } from "./_generated/server";
+import { v } from "convex/values";
+
+export const myMutationFunction = mutation({
+  // Validators for arguments.
+  args: {
+    first: v.string(),
+    second: v.string(),
+  },
+
+  // Function implementation.
+  handler: async (ctx, args) => {
+    // Insert or modify documents in the database here.
+    // Mutations can also read from the database like queries.
+    // See https://docs.convex.dev/database/writing-data.
+    const message = { body: args.first, author: args.second };
+    const id = await ctx.db.insert("messages", message);
+
+    // Optionally, return a value from your mutation.
+    return await ctx.db.get("messages", id);
+  },
+});
+```
+
+Using this mutation function in a React component looks like:
+
+```ts
+const mutation = useMutation(api.myFunctions.myMutationFunction);
+function handleButtonPress() {
+  // fire and forget, the most common way to use mutations
+  mutation({ first: "Hello!", second: "me" });
+  // OR
+  // use the result once the mutation has completed
+  mutation({ first: "Hello!", second: "me" }).then((result) =>
+    console.log(result),
+  );
+}
+```
+
+Use the Convex CLI to push your functions to a deployment. See everything
+the Convex CLI can do by running `npx convex -h` in your project root
+directory. To learn more, launch the docs with `npx convex docs`.

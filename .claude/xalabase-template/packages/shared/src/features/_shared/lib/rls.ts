@@ -11,8 +11,8 @@
  * @see https://stack.convex.dev/row-level-security
  */
 
-import { QueryCtx, MutationCtx } from "../_generated/server";
-import { DataModel } from "../_generated/dataModel";
+import { QueryCtx, MutationCtx } from "../../../../../../convex/_generated/server";
+import { DataModel } from "../../../../../../convex/_generated/dataModel";
 import {
     Rules,
     RLSConfig,

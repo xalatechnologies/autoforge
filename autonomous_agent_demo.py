@@ -184,6 +184,14 @@ Authentication:
         help="Max features per coding agent batch (1-3, default: 3)",
     )
 
+    parser.add_argument(
+        "--template",
+        type=str,
+        choices=["default", "xalabase"],
+        default="xalabase",
+        help="Project template type (default: xalabase)",
+    )
+
     return parser.parse_args()
 
 
@@ -259,6 +267,7 @@ def main() -> None:
                     agent_type=args.agent_type,
                     testing_feature_id=args.testing_feature_id,
                     testing_feature_ids=testing_feature_ids,
+                    template_type=args.template,
                 )
             )
         else:

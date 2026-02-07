@@ -1,5 +1,5 @@
-import { query, mutation } from "../_generated/server";
-import { components } from "../_generated/api";
+import { query, mutation } from "../../../../../../convex/_generated/server";
+import { components } from "../../../../../../convex/_generated/api";
 import { v } from "convex/values";
 
 /**

@@ -8,7 +8,7 @@
  */
 
 import { crud } from "convex-helpers/server/crud";
-import schema from "../schema";
+import schema from "../../../../../../convex/schema";
 
 // =============================================================================
 // CORE TABLE CRUD (tables that remain in app schema)

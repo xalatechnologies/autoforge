@@ -9,6 +9,7 @@
  */
 
 import type * as contract from "../contract.js";
+import type * as index from "../index.js";
 import type * as mutations from "../mutations.js";
 import type * as queries from "../queries.js";
 
@@ -21,6 +22,7 @@ import { anyApi, componentsGeneric } from "convex/server";
 
 const fullApi: ApiFromModules<{
   contract: typeof contract;
+  index: typeof index;
   mutations: typeof mutations;
   queries: typeof queries;
 }> = anyApi as any;
